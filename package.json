@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "jsdom": "^21.0.0"
+  },
+  "name": "auto-kit-login",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "browserify src/background.js > dist/background.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rizecookey/auto-kit-login.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Automatic Shibboleth login on KIT pages."
+}
