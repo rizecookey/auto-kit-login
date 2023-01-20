@@ -1,0 +1,22 @@
+{
+    "manifest_version": 3,
+    "name": "Auto KIT Login",
+    "description": "Automatic Shibboleth login for KIT pages",
+    "version": "1.0",
+    "host_permissions": [
+        "*://*.kit.edu/"
+    ],
+    "action": {
+        "default_icon": "kit_cookie.png"
+    },
+    "permissions": [
+        "webRequest",
+        "cookies"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "icons": {
+        "822": "kit_cookie.png"
+    }
+}
