@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "browserify": "^17.0.0",
-    "jsdom": "^21.0.0"
+    "jquery": "^3.6.3"
   },
   "name": "auto-kit-login",
   "version": "1.0.0",

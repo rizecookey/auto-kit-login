@@ -10,7 +10,7 @@
         "default_icon": "kit_cookie.png"
     },
     "permissions": [
-        "webRequest",
+        "webNavigation",
         "cookies"
     ],
     "background": {
