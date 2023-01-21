@@ -15,8 +15,9 @@ chrome.webNavigation.onBeforeNavigate.addListener((details) => {
 
 async function makeLoginRequest(tabId) {
     chrome.tabs.update(tabId, {
-        url: "shibboleth-authenticating.html"
+        url: "authenticating.html"
     });
+    console.log("starting authentication on tab with id " + tabId);
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

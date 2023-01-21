@@ -12,13 +12,15 @@ async function build() {
         fs.mkdirSync(OUT_DIR);
     }
 
-    for (let file of fs.readdirSync(SRC_DIR)) {
+    for (let file of readdirRecursive(SRC_DIR)) {
         let srcFile = SRC_DIR + file;
         let outFile = OUT_DIR + file;
 
         if (fs.lstatSync(srcFile).isDirectory()) {
-            fs.mkdirSync(outFile);
-            console.log(`${pad("created")} ${outFile}`);
+            if (!fs.existsSync(outFile)) {
+                fs.mkdirSync(outFile);
+                console.log(`${pad("created")} ${outFile}`);
+            }
             continue;
         }
 
@@ -39,6 +41,22 @@ async function build() {
     }
 }
 
+function readdirRecursive(path) {
+    let files = [];
+    for (let file of fs.readdirSync(path)) {
+        files.push(file);
+        if (fs.lstatSync(path + file).isDirectory()) {
+            files.push(file);
+            readdirRecursive(path + file + "/")
+                .map(elem => file + "/" + elem)
+                .forEach(elem => {
+                    files.push(elem);
+            });
+        }
+    }
+    return files;
+}
+
 function pad(text) {
     let output = text;
     for (let i = 0; i <= LOG_COMMAND_LENGTH - text.length; i++) {
@@ -49,12 +67,12 @@ function pad(text) {
 
 function bundle(input, output) {
     let outStream = fs.createWriteStream(output);
-    return new Promise((resolve, reject) => 
+    return new Promise((resolve, reject) =>
         browserify(input).bundle().pipe(outStream)
             .on('finish', () => {
                 resolve();
             }
-        )
+            )
     );
 }
 

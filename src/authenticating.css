@@ -1,0 +1,25 @@
+:root {
+    --main-color: white;
+    --background-color: black;
+    --opacity: 0;
+}
+
+html {
+    color: var(--main-color);
+    background-color: var(--background-color);
+
+    font-family: 'Segoe UI', sans-serif;
+    font-style: normal;
+    font-weight: 300;
+    font-size: 3vh;
+}
+
+.main {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    max-width: 40em;
+}
