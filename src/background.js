@@ -38,12 +38,12 @@ async function redirectAndAuthenticate(tabId, originalPage) {
 }
 
 chrome.runtime.onMessage.addListener(async (request, sender) => {
-    if (request.auth_redirect) {
-        console.log('redirecting auth tab back to ' + request.auth_redirect);
+    if (request.authRedirect) {
+        console.log('redirecting auth tab back to ' + request.authRedirect);
 
         preventRedirection = true;
         await chrome.tabs.update(sender.tab.id, {
-            url: request.auth_redirect
+            url: request.authRedirect
         });
     }
 })
