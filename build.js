@@ -46,7 +46,6 @@ function readdirRecursive(path) {
     for (let file of fs.readdirSync(path)) {
         files.push(file);
         if (fs.lstatSync(path + file).isDirectory()) {
-            files.push(file);
             readdirRecursive(path + file + "/")
                 .map(elem => file + "/" + elem)
                 .forEach(elem => {

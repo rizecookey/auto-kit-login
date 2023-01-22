@@ -1,40 +1,62 @@
-const ILIAS_HOST = 'ilias.studium.kit.edu';
+const Constants = require('./constants');
 
-var preventRedirection = false;
+let preventRedirection = false;
 
 chrome.webNavigation.onCompleted.addListener(() => {
     if (preventRedirection) {
         preventRedirection = false;
     }
 }, {
-    url: [{
-        hostContains: ILIAS_HOST
-    }]
+    url: filters()
 })
 
-chrome.webNavigation.onBeforeNavigate.addListener((details) => {
+chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     if (preventRedirection) {
         return;
     }
-    chrome.cookies.getAll({
-        domain: 'kit.edu'
-    }, (cookies) => {
-        let sessionCookie = cookies.find(cookie => cookie.name.startsWith('_shibsession'));
-        if (!sessionCookie) {
-            redirectAndAuthenticate(details.tabId, details.url);
-        }
+    let cookies = await chrome.cookies.getAll({
+        domain: new URL(details.url).hostname
     });
+    let sessionCookie = cookies.find(cookie => cookie.name.startsWith('_shibsession'));
+    if (!sessionCookie) {
+        await clearIDPSessionCookie();
+        await redirectAndAuthenticate(details.tabId, details.url);
+    }
 }, {
-    url: [{
-        hostContains: ILIAS_HOST
-    }]
+    url: filters()
 });
 
-async function redirectAndAuthenticate(tabId, originalPage) {
+function filters() {
+    let filters = [];
+    for (let elem of Constants.LOGIN_PAGES.keys()) {
+        filters.push({
+            hostContains: elem
+        });
+    }
+
+    return filters;
+}
+
+async function redirectAndAuthenticate(tabId, loginPage, originalPage) {
+    let params = new URLSearchParams();
+    params.append(Constants.Param.LOGIN_URL, loginPage);
+    params.append(Constants.Param.REDIRECT, originalPage);
     chrome.tabs.update(tabId, {
-        url: `authenticating.html?redirect_to=${encodeURIComponent(originalPage)}`
+        url: `authenticating.html?${params.toString()}`
     });
     console.log('starting authentication on tab with id ' + tabId);
+}
+
+async function clearIDPSessionCookie() {
+    let cookies = await chrome.cookies.getAll({
+        url: Constants.IDP_URL
+    });
+    for (let cookie of cookies) {
+        await chrome.cookies.remove({
+            name: cookie.name,
+            url: Constants.IDP_URL
+        });
+    }
 }
 
 chrome.runtime.onMessage.addListener(async (request, sender) => {
