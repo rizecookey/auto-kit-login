@@ -1,4 +1,21 @@
+const ILIAS_HOST = 'ilias.studium.kit.edu';
+
+var preventRedirection = false;
+
+chrome.webNavigation.onCompleted.addListener((details) => {
+    if (preventRedirection) {
+        preventRedirection = false;
+    }
+}, {
+    url: [{
+        hostContains: ILIAS_HOST
+    }]
+})
+
 chrome.webNavigation.onBeforeNavigate.addListener((details) => {
+    if (preventRedirection) {
+        return;
+    }
     chrome.cookies.getAll({
         domain: 'kit.edu'
     }, (cookies) => {
@@ -9,20 +26,24 @@ chrome.webNavigation.onBeforeNavigate.addListener((details) => {
     });
 }, {
     url: [{
-        hostContains: 'ilias.studium.kit.edu'
+        hostContains: ILIAS_HOST
     }]
 });
 
 async function makeLoginRequest(tabId) {
     chrome.tabs.update(tabId, {
-        url: "authenticating.html"
+        url: 'authenticating.html'
     });
-    console.log("starting authentication on tab with id " + tabId);
+    console.log('starting authentication on tab with id ' + tabId);
 }
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (sender.tab == authenticationTab && request.closeTab) {
-        console.log(`closing authentication tab with id ${authenticationTab.id}`);
-        chrome.tabs.remove({ tabIds: authenticationTab.id });
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+    if (request.auth_redirect) {
+        console.log('redirecting auth tab back to ' + request.auth_redirect);
+
+        preventRedirection = true;
+        await chrome.tabs.update(sender.tab.id, {
+            url: request.auth_redirect
+        });
     }
 })
