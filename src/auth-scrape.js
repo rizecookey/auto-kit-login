@@ -4,7 +4,10 @@ async function makeLoginRequest() {
     /*var response = await fetch('https://ilias.studium.kit.edu/shib_login.php?target=root_1');
     let url = response.url;*/
 
-    setTimeout(() => chrome.runtime.sendMessage({ auth_redirect: 'https://ilias.studium.kit.edu' }), 2000);
+    var url = new URL(window.location.href);
+    var redirectTo = url.searchParams.get('redirect_to');
+
+    setTimeout(() => chrome.runtime.sendMessage({ auth_redirect: redirectTo }), 2000);
 }
 
 makeLoginRequest();

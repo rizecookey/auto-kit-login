@@ -2,7 +2,7 @@ const ILIAS_HOST = 'ilias.studium.kit.edu';
 
 var preventRedirection = false;
 
-chrome.webNavigation.onCompleted.addListener((details) => {
+chrome.webNavigation.onCompleted.addListener(() => {
     if (preventRedirection) {
         preventRedirection = false;
     }
@@ -21,7 +21,7 @@ chrome.webNavigation.onBeforeNavigate.addListener((details) => {
     }, (cookies) => {
         let sessionCookie = cookies.find(cookie => cookie.name.startsWith('_shibsession'));
         if (!sessionCookie) {
-            makeLoginRequest(details.tabId);
+            redirectAndAuthenticate(details.tabId, details.url);
         }
     });
 }, {
@@ -30,14 +30,14 @@ chrome.webNavigation.onBeforeNavigate.addListener((details) => {
     }]
 });
 
-async function makeLoginRequest(tabId) {
+async function redirectAndAuthenticate(tabId, originalPage) {
     chrome.tabs.update(tabId, {
-        url: 'authenticating.html'
+        url: `authenticating.html?redirect_to=${encodeURIComponent(originalPage)}`
     });
     console.log('starting authentication on tab with id ' + tabId);
 }
 
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (request, sender) => {
     if (request.auth_redirect) {
         console.log('redirecting auth tab back to ' + request.auth_redirect);
 
