@@ -7,6 +7,7 @@ const Constants = {
     },
 
     IDP_URL: 'https://idp.scc.kit.edu/idp',
+    LOGOUT_URL: 'https://ilias.studium.kit.edu/Shibboleth.sso/Logout',
 
     Param: {
         REDIRECT: 'redirect_to',

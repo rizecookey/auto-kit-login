@@ -8,10 +8,19 @@ chrome.webNavigation.onCompleted.addListener(() => {
     }
 }, {
     url: filters()
-})
+});
+
+chrome.webNavigation.onBeforeNavigate.addListener(() => {
+    chrome.storage.local.remove(Constants.LOGIN_DETAILS_KEY);
+}, {
+    urlContains: Constants.LOGOUT_URL
+});
 
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     if (preventRedirection) {
+        return;
+    }
+    if (!await chrome.storage.local.get(Constants.LOGIN_DETAILS_KEY)) {
         return;
     }
     let cookies = await chrome.cookies.getAll({
@@ -70,4 +79,4 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
     }
 });
 
-//TODO delete storage on logout & inject grab_login.js
+//TODO inject grab_login.js
