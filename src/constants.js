@@ -6,8 +6,10 @@ const Constants = {
         MY_SCC: 'my.scc.kit.edu'
     },
 
+    SHIBSESSION_COOKIE: '_shibsession',
     IDP_URL: 'https://idp.scc.kit.edu/idp',
-    LOGOUT_URL: 'https://ilias.studium.kit.edu/Shibboleth.sso/Logout',
+    LOGIN_URL: 'https://idp.scc.kit.edu/idp/profile/SAML2/Redirect/SSO**',
+    LOGOUT_URL: 'https://idp.scc.kit.edu/idp/profile/SAML2/Redirect/SLO**',
 
     Param: {
         REDIRECT: 'redirect_to',

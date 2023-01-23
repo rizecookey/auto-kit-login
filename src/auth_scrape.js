@@ -24,7 +24,7 @@ async function makeLoginRequest(pageUrl) {
     });
 
     if (result.ok) {
-        console.log('logged in as: ' + loginForm.get(Constants.Field.USERNAME)) 
+        console.log('logged in as: ' + loginForm.get(Constants.Field.USERNAME))
     }
 
     redirectBack();
@@ -32,7 +32,7 @@ async function makeLoginRequest(pageUrl) {
 
 async function getFormDetails(fetchResponse) {
     let csrfToken = getCSRFToken(await fetchResponse.text());
-    let loginDetails = getLoginDetails();
+    let loginDetails = await getLoginDetails();
 
     let formData = new URLSearchParams();
     formData.append(Constants.Field.CSRF_TOKEN, csrfToken);
@@ -67,7 +67,13 @@ function getCSRFToken(domString) {
 }
 
 function redirectBack() {
-    chrome.runtime.sendMessage({ authRedirect: redirectTo });
+    chrome.runtime.sendMessage({
+        auth: {
+            redirect: {
+                url: redirectTo
+            }
+        }
+    });
 }
 
 async function getLoginDetails() {

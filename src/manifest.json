@@ -11,14 +11,10 @@
     },
     "permissions": [
         "webNavigation",
+        "webRequest",
         "cookies",
-        "storage"
-    ],
-    "content_scripts": [
-        {
-            "matches": ["https://idp.scc.kit.edu/idp/profile/SAML2/Redirect/SSO"],
-            "js": ["grab_login.js"]
-        }
+        "storage",
+        "scripting"
     ],
     "background": {
         "service_worker": "background.js"
