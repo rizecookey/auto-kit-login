@@ -70,11 +70,8 @@ function redirectBack() {
     chrome.runtime.sendMessage({ authRedirect: redirectTo });
 }
 
-function getLoginDetails() {
-    return {
-        username: 'USERNAME',
-        password: 'PASSWORD'
-    };
+async function getLoginDetails() {
+    return await chrome.storage.local.get(Constants.LOGIN_DETAILS_KEY); //TODO set login somewhere
 }
 
 makeLoginRequest(loginPage);

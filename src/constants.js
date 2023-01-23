@@ -1,4 +1,5 @@
 const Constants = {
+    LOGIN_DETAILS_KEY: 'loginDetails',
     URL: {
         ILIAS: 'ilias.studium.kit.edu',
         CAMPUS_KIT: 'campus.studium.kit.edu',
