@@ -71,7 +71,7 @@ function redirectBack() {
 }
 
 async function getLoginDetails() {
-    return await chrome.storage.local.get(Constants.LOGIN_DETAILS_KEY); //TODO set login somewhere
+    return await chrome.storage.local.get(Constants.LOGIN_DETAILS_KEY);
 }
 
 makeLoginRequest(loginPage);

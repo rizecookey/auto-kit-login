@@ -68,4 +68,6 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
             url: request.authRedirect
         });
     }
-})
+});
+
+//TODO delete storage on logout & inject grab_login.js
