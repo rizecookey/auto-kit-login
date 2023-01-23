@@ -1,9 +1,24 @@
 let $ = require('jquery');
 const Constants = require('./constants')
 
-const url = new URL(window.location.href);
-let loginPage = url.searchParams.get(Constants.Param.LOGIN_URL)
-let redirectTo = url.searchParams.get(Constants.Param.REDIRECT);
+let loginPage = undefined;
+let redirectTo = undefined;
+let loginDetails = undefined;
+
+async function start() {
+    await setup();
+    console.log('current user: ' + loginDetails.username);
+    await makeLoginRequest(loginPage);
+}
+
+async function setup() {
+    let url = new URL(window.location.href);
+
+    loginPage = url.searchParams.get(Constants.Param.LOGIN_URL);
+    redirectTo = url.searchParams.get(Constants.Param.REDIRECT);
+    loginDetails = await fetchLoginDetails();
+    $('#orig_page_url').text(new URL(loginPage).hostname);
+}
 
 async function makeLoginRequest(pageUrl) {
     let loginPageResponse = await fetch(pageUrl);
@@ -32,7 +47,6 @@ async function makeLoginRequest(pageUrl) {
 
 async function getFormDetails(fetchResponse) {
     let csrfToken = getCSRFToken(await fetchResponse.text());
-    let loginDetails = await getLoginDetails();
 
     let formData = new URLSearchParams();
     formData.append(Constants.Field.CSRF_TOKEN, csrfToken);
@@ -76,8 +90,8 @@ function redirectBack() {
     });
 }
 
-async function getLoginDetails() {
-    return await chrome.storage.local.get(Constants.LOGIN_DETAILS_KEY);
+async function fetchLoginDetails() {
+    return (await chrome.storage.local.get(Constants.LOGIN_DETAILS_KEY))[Constants.LOGIN_DETAILS_KEY];
 }
 
-makeLoginRequest(loginPage);
+start();

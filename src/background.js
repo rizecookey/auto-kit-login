@@ -115,7 +115,7 @@ async function injectCredentialGrabber(tabId) {
 
 async function deleteCredentials() {
     await chrome.storage.local.remove(Constants.LOGIN_DETAILS_KEY);
-    console.log('deleting login for currently logged in user because they manually signed out');
+    console.log('deleting login for currently logged in user');
 }
 
 async function onGrabberRequest(sender, data) {
@@ -125,7 +125,7 @@ async function onGrabberRequest(sender, data) {
     }
 
     if (data.storedCredentials) {
-        console.log(`stored login for user '${data.storedCredentials.username}'`);
+        console.log(`stored login for user '${data.storedCredentials}'`);
     }
 }
 
@@ -141,7 +141,8 @@ async function onAuthRequest(sender, data) {
 }
 
 async function onAuthError(error) {
-    //TODO
+    console.log(`authenticator tab reported error: '${error.message}'`);
+    await deleteCredentials();
 }
 
 async function runAuthRedirect(tabId, authRedirectData) {
