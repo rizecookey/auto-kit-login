@@ -16,10 +16,25 @@
         "storage",
         "scripting"
     ],
+    "web_accessible_resources": [
+        {
+            "extension_ids": [
+                "autokitlogin@rizecookey.net"
+            ],
+            "resources": ["authenticating.html"]
+        }
+    ],
     "background": {
-        "scripts": ["background.js"]
+        "scripts": [
+            "background.js"
+        ]
     },
     "icons": {
         "822": "kit_cookie.png"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "autokitlogin@rizecookey.net"
+        }
     }
 }
