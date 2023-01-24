@@ -1,3 +1,5 @@
+let browser = require('webextension-polyfill');
+
 let $ = require('jquery');
 const config = require('./config');
 
@@ -13,7 +15,7 @@ async function start() {
     try {
         await makeLoginRequest(loginPage);
     } catch (error) {
-        chrome.runtime.sendMessage({
+        browser.runtime.sendMessage({
             auth: {
                 error: {
                     message: error.message
@@ -94,7 +96,7 @@ function getCSRFToken(domString) {
 }
 
 function redirectBack() {
-    chrome.runtime.sendMessage({
+    browser.runtime.sendMessage({
         auth: {
             redirect: {
                 url: redirectTo
@@ -104,7 +106,7 @@ function redirectBack() {
 }
 
 async function fetchLoginDetails() {
-    return (await chrome.storage.local.get('loginDetails')).loginDetails;
+    return (await browser.storage.local.get('loginDetails')).loginDetails;
 }
 
 start();
