@@ -1,9 +1,11 @@
 let $ = require('jquery');
-const Constants = require('./constants')
+const config = require('./config');
 
 let loginPage = undefined;
 let redirectTo = undefined;
 let loginDetails = undefined;
+
+const fieldNames = config.loginSequence.field;
 
 async function start() {
     await setup();
@@ -26,8 +28,8 @@ async function start() {
 async function setup() {
     let url = new URL(window.location.href);
 
-    loginPage = url.searchParams.get(Constants.Param.LOGIN_URL);
-    redirectTo = url.searchParams.get(Constants.Param.REDIRECT);
+    loginPage = url.searchParams.get(config.extension.pageParameters.loginUrl);
+    redirectTo = url.searchParams.get(config.extension.pageParameters.redirect);
     loginDetails = await fetchLoginDetails();
     $('#orig_page_url').text(new URL(loginPage).hostname);
 }
@@ -39,19 +41,19 @@ async function makeLoginRequest(pageUrl) {
 
     let loginResponse = await fetch(loginUrl, {
         method: 'POST',
-        headers: Constants.POST_HEADERS,
+        headers: config.loginSequence.postHeaders,
         body: loginForm
     });
 
     let samlRequestData = await scrapeSAMLRequestData(loginResponse);
     let result = await fetch(samlRequestData.url, {
         method: 'POST',
-        headers: Constants.POST_HEADERS,
+        headers: config.loginSequence.postHeaders,
         body: samlRequestData.formData
     });
 
     if (result.ok) {
-        console.log('logged in as: ' + loginForm.get(Constants.Field.USERNAME))
+        console.log('logged in as: ' + loginForm.get(config.loginSequence.field.username));
     }
 
     redirectBack();
@@ -61,25 +63,24 @@ async function getFormDetails(fetchResponse) {
     let csrfToken = getCSRFToken(await fetchResponse.text());
 
     let formData = new URLSearchParams();
-    formData.append(Constants.Field.CSRF_TOKEN, csrfToken);
-    formData.append(Constants.Field.USERNAME, loginDetails.username);
-    formData.append(Constants.Field.PASSWORD, loginDetails.password);
-    formData.append(Constants.Field.EVENT_ID_PROCEED, '');
+    formData.append(fieldNames.csrfToken, csrfToken);
+    formData.append(fieldNames.username, loginDetails.username);
+    formData.append(fieldNames.password, loginDetails.password);
+    formData.append(fieldNames.eventIdProceed, '');
 
     return formData;
 }
 
 async function scrapeSAMLRequestData(fetchResponse) {
     let domString = await fetchResponse.text();
-    console.log(domString);
-    let relayStateInput = $(`input[name="${Constants.Field.RELAY_STATE}"]`, $(domString));
+    let relayStateInput = $(`input[name="${fieldNames.relayState}"]`, $(domString));
     let url = relayStateInput.parents('form:first').prop('action');
     let relayState = relayStateInput.val()
-    let samlResponse = $(`input[name="${Constants.Field.SAML_RESPONSE}"]`, $(domString)).val();
+    let samlResponse = $(`input[name="${fieldNames.samlResponse}"]`, $(domString)).val();
 
     let formData = new URLSearchParams();
-    formData.append(Constants.Field.RELAY_STATE, relayState);
-    formData.append(Constants.Field.SAML_RESPONSE, samlResponse);
+    formData.append(fieldNames.relayState, relayState);
+    formData.append(fieldNames.samlResponse, samlResponse);
 
     return {
         url: url,
@@ -88,7 +89,7 @@ async function scrapeSAMLRequestData(fetchResponse) {
 }
 
 function getCSRFToken(domString) {
-    let value = $(`input[name="${Constants.Field.CSRF_TOKEN}"]`, $(domString)).val();
+    let value = $(`input[name="${fieldNames.csrfToken}"]`, $(domString)).val();
     return value;
 }
 
@@ -103,7 +104,7 @@ function redirectBack() {
 }
 
 async function fetchLoginDetails() {
-    return (await chrome.storage.local.get(Constants.LOGIN_DETAILS_KEY))[Constants.LOGIN_DETAILS_KEY];
+    return (await chrome.storage.local.get('loginDetails')).loginDetails;
 }
 
 start();

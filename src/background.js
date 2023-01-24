@@ -1,4 +1,4 @@
-const Constants = require('./constants');
+const config = require('./config');
 
 let preventRedirection = false;
 
@@ -15,7 +15,7 @@ chrome.webRequest.onCompleted.addListener(async () => {
         await deleteCredentials();
     }
 }, {
-    urls: [Constants.LOGOUT_URL]
+    urls: [config.loginSequence.url.logout]
 });
 
 chrome.webRequest.onCompleted.addListener(async (details) => {
@@ -23,7 +23,7 @@ chrome.webRequest.onCompleted.addListener(async (details) => {
         await injectCredentialGrabber(details.tabId);
     }
 }, {
-    urls: [Constants.LOGIN_URL]
+    urls: [config.loginSequence.url.login]
 });
 
 chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
@@ -37,13 +37,14 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     let cookies = await chrome.cookies.getAll({
         domain: domain
     });
-    let sessionCookie = cookies.find(cookie => cookie.name.startsWith(Constants.SHIBSESSION_COOKIE));
+    let sessionCookie = cookies.find(cookie => 
+        cookie.name.startsWith(config.loginSequence.cookies.shibsession));
     if (!sessionCookie) {
         await clearIDPSessionCookie();
         let loginUrl = undefined;
-        for (let hostname of Constants.LOGIN_PAGES.keys()) {
-            if (domain.includes(hostname)) {
-                loginUrl = Constants.LOGIN_PAGES.get(hostname);
+        for (let page of config.pages) {
+            if (domain.includes(page.hostname)) {
+                loginUrl = page.loginPage;
                 break;
             }
         }
@@ -67,15 +68,15 @@ chrome.runtime.onMessage.addListener(async (request, sender) => {
 });
 
 async function loginSaved() {
-    let loginDetails = (await chrome.storage.local.get(Constants.LOGIN_DETAILS_KEY))[Constants.LOGIN_DETAILS_KEY];
+    let loginDetails = (await chrome.storage.local.get('loginDetails')).loginDetails;
     return loginDetails && loginDetails.username && loginDetails.password;
 }
 
 function kitPageFilters() {
     let filters = [];
-    for (let elem of Constants.LOGIN_PAGES.keys()) {
+    for (let page of config.pages) {
         filters.push({
-            hostContains: elem
+            hostContains: page.hostname
         });
     }
 
@@ -84,20 +85,20 @@ function kitPageFilters() {
 
 async function clearIDPSessionCookie() {
     let cookies = await chrome.cookies.getAll({
-        url: Constants.IDP_URL
+        url: config.loginSequence.url.idp
     });
     for (let cookie of cookies) {
         await chrome.cookies.remove({
             name: cookie.name,
-            url: Constants.IDP_URL
+            url: config.loginSequence.url.idp
         });
     }
 }
 
 async function redirectAndAuthenticate(tabId, loginPage, originalPage) {
     let params = new URLSearchParams();
-    params.append(Constants.Param.LOGIN_URL, loginPage);
-    params.append(Constants.Param.REDIRECT, originalPage);
+    params.append(config.extension.pageParameters.loginUrl, loginPage);
+    params.append(config.extension.pageParameters.redirect, originalPage);
     chrome.tabs.update(tabId, {
         url: `authenticating.html?${params.toString()}`
     });
@@ -114,7 +115,7 @@ async function injectCredentialGrabber(tabId) {
 }
 
 async function deleteCredentials() {
-    await chrome.storage.local.remove(Constants.LOGIN_DETAILS_KEY);
+    await chrome.storage.local.remove('loginDetails');
     console.log('deleting login for currently logged in user');
 }
 

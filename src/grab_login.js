@@ -1,5 +1,5 @@
 let $ = require('jquery');
-const Constants = require('./constants');
+const config = require('./config');
 
 $('#sbmt').on('click', () => grabAndSave());
 
@@ -10,15 +10,15 @@ chrome.runtime.sendMessage({
 });
 
 function grabAndSave() {
-    let username = $('input[name="j_username"]').val();
-    let password = $('input[name="j_password"]').val();
+    let username = $(`input[name="${config.loginSequence.field.username}"]`).val();
+    let password = $(`input[name="${config.loginSequence.field.password}"]`).val();
 
-    let storedObject = {};
-    storedObject[Constants.LOGIN_DETAILS_KEY] = {
-        username: username,
-        password: password
-    };
-    chrome.storage.local.set(storedObject);
+    chrome.storage.local.set({
+        loginDetails: {
+            username: username,
+            password: password
+        }
+    });
     chrome.runtime.sendMessage({
         credentialGrabber: {
             storedCredentials: username
