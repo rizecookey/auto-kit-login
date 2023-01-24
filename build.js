@@ -2,42 +2,23 @@ const fs = require('fs');
 const browserify = require('browserify');
 
 const LOG_COMMAND_LENGTH = 12;
+const PLATFORM_SRC = 'platform_src/';
 const SRC_DIR = 'src/';
 const OUT_DIR = 'dist/';
+const PLATFORMS = ['chrome', 'firefox']
 
 async function build() {
     console.log('Building...');
 
-    if (!fs.existsSync(OUT_DIR)) {
-        fs.mkdirSync(OUT_DIR);
+    if (fs.existsSync(OUT_DIR)) {
+        fs.rmSync(OUT_DIR, { recursive: true, force: true });
+        console.log(`${pad("cleared")} ${OUT_DIR}`);
     }
+    fs.mkdirSync(OUT_DIR);
 
-    for (let file of readdirRecursive(SRC_DIR)) {
-        let srcFile = SRC_DIR + file;
-        let outFile = OUT_DIR + file;
-
-        if (fs.lstatSync(srcFile).isDirectory()) {
-            if (!fs.existsSync(outFile)) {
-                fs.mkdirSync(outFile);
-                console.log(`${pad("created")} ${outFile}`);
-            }
-            continue;
-        }
-
-        if (fs.existsSync(outFile)) {
-            fs.rmSync(outFile);
-            console.log(`${pad("deleted")} ${outFile}`);
-        }
-
-        if (file.endsWith('.js')) {
-            console.log(`${pad("bundling")} ${srcFile}`);
-            await bundle(srcFile, outFile);
-            console.log(`${pad("bundled")} ${srcFile} > ${outFile}`);
-            continue;
-        }
-
-        fs.copyFileSync(srcFile, outFile);
-        console.log(`${pad("copied")} ${srcFile} > ${outFile}`);
+    for (let platform of PLATFORMS) {
+        let platformDir = platform + "/";
+        await buildDist([SRC_DIR, PLATFORM_SRC + platformDir], OUT_DIR + platformDir);
     }
 }
 
@@ -50,7 +31,7 @@ function readdirRecursive(path) {
                 .map(elem => file + "/" + elem)
                 .forEach(elem => {
                     files.push(elem);
-            });
+                });
         }
     }
     return files;
@@ -73,6 +54,34 @@ function bundle(input, output) {
             }
             )
     );
+}
+
+async function buildDist(srcDirs, outDir) {
+    fs.mkdirSync(outDir)
+    for (let srcDir of srcDirs) {
+        for (let file of readdirRecursive(srcDir)) {
+            let srcFile = srcDir + file;
+            let outFile = outDir + file;
+
+            if (fs.lstatSync(srcFile).isDirectory()) {
+                if (!fs.existsSync(outFile)) {
+                    fs.mkdirSync(outFile);
+                    console.log(`${pad("created")} ${outFile}`);
+                }
+                continue;
+            }
+
+            if (file.endsWith('.js')) {
+                console.log(`${pad("bundling")} ${srcFile}`);
+                await bundle(srcFile, outFile);
+                console.log(`${pad("bundled")} ${srcFile} > ${outFile}`);
+                continue;
+            }
+
+            fs.copyFileSync(srcFile, outFile);
+            console.log(`${pad("copied")} ${srcFile} > ${outFile}`);
+        }
+    }
 }
 
 build();
