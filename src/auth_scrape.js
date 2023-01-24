@@ -8,7 +8,19 @@ let loginDetails = undefined;
 async function start() {
     await setup();
     console.log('current user: ' + loginDetails.username);
-    await makeLoginRequest(loginPage);
+    try {
+        await makeLoginRequest(loginPage);
+    } catch (error) {
+        chrome.runtime.sendMessage({
+            auth: {
+                error: {
+                    message: error.message
+                }
+            }
+        });
+
+        redirectBack();
+    }
 }
 
 async function setup() {
