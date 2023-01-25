@@ -45,15 +45,12 @@ function pad(text) {
     return output;
 }
 
-function bundle(input, output) {
+function bundle(input, additionalSources, output) {
     let outStream = fs.createWriteStream(output);
-    return new Promise((resolve, reject) =>
-        browserify(input).bundle().pipe(outStream)
-            .on('finish', () => {
-                resolve();
-            }
-            )
-    );
+    return new Promise((resolve) =>
+        browserify(input, {
+            paths: additionalSources
+        }).bundle().pipe(outStream).on('finish', () => resolve()));
 }
 
 async function buildDist(srcDirs, outDir) {
@@ -73,7 +70,7 @@ async function buildDist(srcDirs, outDir) {
 
             if (file.endsWith('.js')) {
                 console.log(`${pad("bundling")} ${srcFile}`);
-                await bundle(srcFile, outFile);
+                await bundle(srcFile, srcDirs, outFile);
                 console.log(`${pad("bundled")} ${srcFile} > ${outFile}`);
                 continue;
             }
