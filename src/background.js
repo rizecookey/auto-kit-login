@@ -4,6 +4,8 @@ const config = require('./config');
 
 let preventRedirection = false;
 
+console.log('background script initialized')
+
 browser.webNavigation.onCompleted.addListener(() => {
     if (preventRedirection) {
         preventRedirection = false;
