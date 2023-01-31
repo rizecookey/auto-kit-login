@@ -1,11 +1,17 @@
 const fs = require('fs');
+const path = require('path');
 const browserify = require('browserify');
 
 const LOG_COMMAND_LENGTH = 12;
 const PLATFORM_SRC = 'platform_src/';
 const SRC_DIR = 'src/';
 const OUT_DIR = 'dist/';
-const PLATFORMS = ['chrome', 'firefox']
+const PLATFORMS = ['chrome', 'firefox'];
+const FINAL_SCRIPTS = [
+    "auth_scrape.js",
+    "background.js",
+    "grab_login.js"
+];
 
 async function build() {
     console.log('Building...');
@@ -18,7 +24,7 @@ async function build() {
 
     for (let platform of PLATFORMS) {
         let platformDir = platform + "/";
-        await buildDist([SRC_DIR, PLATFORM_SRC + platformDir], OUT_DIR + platformDir);
+        await buildDist([SRC_DIR, PLATFORM_SRC + platformDir], OUT_DIR + platformDir, FINAL_SCRIPTS);
     }
 }
 
@@ -53,7 +59,7 @@ function bundle(input, additionalSources, output) {
         }).bundle().pipe(outStream).on('finish', () => resolve()));
 }
 
-async function buildDist(srcDirs, outDir) {
+async function buildDist(srcDirs, outDir, finalScripts) {
     fs.mkdirSync(outDir)
     for (let srcDir of srcDirs) {
         for (let file of readdirRecursive(srcDir)) {
@@ -69,9 +75,11 @@ async function buildDist(srcDirs, outDir) {
             }
 
             if (file.endsWith('.js')) {
-                console.log(`${pad("bundling")} ${srcFile}`);
-                await bundle(srcFile, srcDirs, outFile);
-                console.log(`${pad("bundled")} ${srcFile} > ${outFile}`);
+                if (finalScripts.find(elem => file == elem)) {
+                    console.log(`${pad("bundling")} ${srcFile}`);
+                    await bundle(srcFile, srcDirs, outFile);
+                    console.log(`${pad("bundled")} ${srcFile} > ${outFile}`);
+                }
                 continue;
             }
 
