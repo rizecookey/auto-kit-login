@@ -1,90 +1,17 @@
 let browser = require('webextension-polyfill');
 
-const config = require('./config');
+const configLoader = require('./config');
+const config = configLoader.getConfig();
+const autologinPageFilters = configLoader.getAutologinPageFilters();
 
-let preventRedirection = false;
+let preventAutologin = false;
 
 console.log('background script initialized')
+registerListeners();
 
-browser.webNavigation.onCompleted.addListener(() => {
-    if (preventRedirection) {
-        preventRedirection = false;
-    }
-}, {
-    url: kitPageFilters()
-});
-
-browser.webRequest.onCompleted.addListener(async () => {
-    if (await loginSaved()) {
-        await deleteCredentials();
-    }
-}, {
-    urls: [config.loginSequence.url.logout]
-});
-
-browser.webRequest.onCompleted.addListener(async (details) => {
-    if (!await loginSaved()) {
-        await injectCredentialGrabber(details.tabId);
-    }
-}, {
-    urls: [config.loginSequence.url.login]
-});
-
-browser.webNavigation.onBeforeNavigate.addListener(async (details) => {
-    if (preventRedirection) {
-        return;
-    }
-    if (!await loginSaved()) {
-        return;
-    }
-    let domain = new URL(details.url).hostname;
-    let cookies = await browser.cookies.getAll({
-        domain: domain
-    });
-    let sessionCookie = cookies.find(cookie => 
-        cookie.name.startsWith(config.loginSequence.cookies.shibsession));
-    if (!sessionCookie) {
-        await clearIDPSessionCookie();
-        let loginUrl = undefined;
-        for (let page of config.pages) {
-            if (domain.includes(page.hostname)) {
-                loginUrl = page.loginPage;
-                break;
-            }
-        }
-        if (!loginUrl) {
-            return;
-        }
-        await redirectAndAuthenticate(details.tabId, loginUrl, details.url);
-    }
-}, {
-    url: kitPageFilters()
-});
-
-browser.runtime.onMessage.addListener(async (request, sender) => {
-    if (request.credentialGrabber) {
-        await onGrabberRequest(sender, request.credentialGrabber);
-        return;
-    }
-    if (request.auth) {
-        await onAuthRequest(sender, request.auth);
-    }
-});
-
-async function loginSaved() {
+async function isLoginSaved() {
     let loginDetails = (await browser.storage.local.get('loginDetails')).loginDetails;
-    return loginDetails && loginDetails.username && loginDetails.password;
-}
-
-function kitPageFilters() {
-    let filters = [];
-    for (let page of config.pages) {
-        filters.push({
-            hostContains: page.hostname
-        });
-    }
-
-    return filters;
+    return loginDetails?.username && loginDetails.password;
 }
 
 async function clearIDPSessionCookie() {
@@ -99,6 +26,45 @@ async function clearIDPSessionCookie() {
     }
 }
 
+async function onVisitLoginPage(details) {
+    if (!await isLoginSaved()) {
+        await injectCredentialGrabber(details.tabId);
+    }
+}
+
+async function onVisitLogoutPage(details) {
+    if (await isLoginSaved()) {
+        await deleteCredentials();
+    }
+}
+
+async function onVisitAuthenticatablePage(details) {
+    if (preventAutologin || !await isLoginSaved()) {
+        return;
+    }
+
+    let domain = new URL(details.url).hostname;
+    let cookies = await browser.cookies.getAll({
+        domain: domain
+    });
+    let sessionCookie = cookies.find(cookie => 
+        cookie.name.startsWith(config.loginSequence.cookies.shibsession));
+    if (!sessionCookie) {
+        await clearIDPSessionCookie();
+        let loginUrl;
+        for (let page of config.pages) {
+            if (domain.includes(page.hostname)) {
+                loginUrl = page.loginPage;
+                break;
+            }
+        }
+        if (!loginUrl) {
+            return;
+        }
+        await redirectAndAuthenticate(details.tabId, loginUrl, details.url);
+    }
+}
+
 async function redirectAndAuthenticate(tabId, loginPage, originalPage) {
     let params = new URLSearchParams();
     params.append(config.extension.pageParameters.loginUrl, loginPage);
@@ -110,12 +76,11 @@ async function redirectAndAuthenticate(tabId, loginPage, originalPage) {
 }
 
 async function injectCredentialGrabber(tabId) {
-    console.log('injecting credential grabber on tab ' + tabId);
     await browser.scripting.executeScript({
         target: { tabId: tabId },
         files: ["grab_login.js"]
     });
-    preventRedirection = true;
+    preventAutologin = true;
 }
 
 async function deleteCredentials() {
@@ -153,8 +118,39 @@ async function onAuthError(error) {
 async function runAuthRedirect(tabId, authRedirectData) {
     console.log(`redirecting auth tab back to '${authRedirectData.url}'`);
 
-    preventRedirection = true;
     await browser.tabs.update(tabId, {
         url: authRedirectData.url
+    });
+
+    preventAutologin = true;
+}
+
+function registerListeners() {
+    browser.webNavigation.onCommitted.addListener(() => {
+        if (preventAutologin) {
+            preventAutologin = false;
+        }
+    }, {
+        url: autologinPageFilters
+    });
+    
+    browser.webRequest.onResponseStarted.addListener(onVisitLogoutPage, {
+        urls: [config.loginSequence.url.logout]
+    });
+    browser.webRequest.onResponseStarted.addListener(onVisitLoginPage, {
+        urls: [config.loginSequence.url.login]
+    });
+    browser.webNavigation.onBeforeNavigate.addListener(onVisitAuthenticatablePage, {
+        url: autologinPageFilters
+    });
+    
+    browser.runtime.onMessage.addListener(async (request, sender) => {
+        if (request.credentialGrabber) {
+            await onGrabberRequest(sender, request.credentialGrabber);
+            return;
+        }
+        if (request.auth) {
+            await onAuthRequest(sender, request.auth);
+        }
     });
 }

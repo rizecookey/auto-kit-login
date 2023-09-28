@@ -1,11 +1,12 @@
 let browser = require('webextension-polyfill');
 
 let $ = require('jquery');
-const config = require('./config');
+const configLoader = require('./config');
+const config = configLoader.getConfig();
 
-let loginPage = undefined;
-let redirectTo = undefined;
-let loginDetails = undefined;
+let loginPage;
+let redirectTo;
+let loginDetails;
 
 const fieldNames = config.loginSequence.field;
 

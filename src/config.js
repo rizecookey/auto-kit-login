@@ -1,4 +1,4 @@
-module.exports = {
+const config = {
     pages: [
         {
             name: 'ILIAS',
@@ -44,3 +44,20 @@ module.exports = {
         }
     }
 }
+
+function getConfig() {
+    return config;
+}
+
+function getAutologinPageFilters() {
+    let filters = [];
+    for (let page of config.pages) {
+        filters.push({
+            hostContains: page.hostname
+        });
+    }
+
+    return filters;
+}
+
+module.exports = { getConfig, getAutologinPageFilters }
