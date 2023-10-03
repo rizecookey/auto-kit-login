@@ -3,9 +3,11 @@ let browser = require('webextension-polyfill');
 const configLoader = require('./config');
 const config = configLoader.getConfig();
 const autologinPageFilters = configLoader.getAutologinPageFilters();
+const { getAuthenticator } = require('./authenticators');
+
+const pageParameters = config.extension.pageParameters;
 
 let preventAutologin = false;
-
 console.log('background script initialized')
 registerListeners();
 
@@ -14,7 +16,7 @@ async function isLoginSaved() {
     return loginDetails?.username && loginDetails.password;
 }
 
-async function clearIDPSessionCookie() {
+async function clearPreviousCookies() {
     let cookies = await browser.cookies.getAll({
         url: config.loginSequence.url.idp
     });
@@ -38,37 +40,45 @@ async function onVisitLogoutPage(details) {
     }
 }
 
+function findMatchingPageDetails(domain) {
+    let pageDetails;
+
+    for (let page of config.pages) {
+        if (domain.includes(page.hostname)) {
+            pageDetails = page;
+        }
+    }
+
+    return pageDetails;
+}
+
 async function onVisitAuthenticatablePage(details) {
     if (preventAutologin || !await isLoginSaved()) {
         return;
     }
 
     let domain = new URL(details.url).hostname;
+    let pageDetails = findMatchingPageDetails(domain);
+
+    if (!pageDetails) {
+        return;
+    }
+
     let cookies = await browser.cookies.getAll({
         domain: domain
     });
-    let sessionCookie = cookies.find(cookie => 
-        cookie.name.startsWith(config.loginSequence.cookies.shibsession));
-    if (!sessionCookie) {
-        await clearIDPSessionCookie();
-        let loginUrl;
-        for (let page of config.pages) {
-            if (domain.includes(page.hostname)) {
-                loginUrl = page.loginPage;
-                break;
-            }
-        }
-        if (!loginUrl) {
-            return;
-        }
-        await redirectAndAuthenticate(details.tabId, loginUrl, details.url);
+    let authenticator = getAuthenticator(pageDetails.authenticator);
+    if (!authenticator.isLoggedIn(cookies)) {
+        await clearPreviousCookies();
+        await redirectAndAuthenticate(details.tabId, pageDetails, details.url);
     }
 }
 
-async function redirectAndAuthenticate(tabId, loginPage, originalPage) {
+async function redirectAndAuthenticate(tabId, pageDetails, originalPage) {
     let params = new URLSearchParams();
-    params.append(config.extension.pageParameters.loginUrl, loginPage);
-    params.append(config.extension.pageParameters.redirect, originalPage);
+    params.append(pageParameters.loginUrl, pageDetails.loginPage);
+    params.append(pageParameters.redirect, originalPage);
+    params.append(pageParameters.authenticatorType, pageDetails.authenticator)
     browser.tabs.update(tabId, {
         url: `authenticating.html?${params.toString()}`
     });
@@ -86,6 +96,7 @@ async function injectCredentialGrabber(tabId) {
 async function deleteCredentials() {
     await browser.storage.local.remove('loginDetails');
     console.log('deleting login for currently logged in user');
+    preventAutologin = false;
 }
 
 async function onGrabberRequest(sender, data) {
@@ -111,7 +122,8 @@ async function onAuthRequest(sender, data) {
 }
 
 async function onAuthError(error) {
-    console.log(`authenticator tab reported error: '${error.message}'`);
+    console.log(`authenticator tab reported error: ${error.message}`);
+    console.log(error.stack);
     await deleteCredentials();
 }
 
@@ -121,7 +133,6 @@ async function runAuthRedirect(tabId, authRedirectData) {
     await browser.tabs.update(tabId, {
         url: authRedirectData.url
     });
-
     preventAutologin = true;
 }
 

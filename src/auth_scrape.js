@@ -4,11 +4,13 @@ let $ = require('jquery');
 const configLoader = require('./config');
 const config = configLoader.getConfig();
 
+const { getAuthenticator } = require('./authenticators');
+const pageParameters = config.extension.pageParameters;
+
 let loginPage;
+let authenticatorType;
 let redirectTo;
 let loginDetails;
-
-const fieldNames = config.loginSequence.field;
 
 async function start() {
     await setup();
@@ -19,7 +21,8 @@ async function start() {
         browser.runtime.sendMessage({
             auth: {
                 error: {
-                    message: error.message
+                    message: error.message,
+                    stack: error.stack
                 }
             }
         });
@@ -31,69 +34,21 @@ async function start() {
 async function setup() {
     let url = new URL(window.location.href);
 
-    loginPage = url.searchParams.get(config.extension.pageParameters.loginUrl);
-    redirectTo = url.searchParams.get(config.extension.pageParameters.redirect);
+    loginPage = url.searchParams.get(pageParameters.loginUrl);
+    redirectTo = url.searchParams.get(pageParameters.redirect);
+    authenticatorType = url.searchParams.get(pageParameters.authenticatorType);
     loginDetails = await fetchLoginDetails();
     $('#orig_page_url').text(new URL(loginPage).hostname);
 }
 
 async function makeLoginRequest(pageUrl) {
-    let loginPageResponse = await fetch(pageUrl);
-    let loginUrl = loginPageResponse.url;
-    let loginForm = await getFormDetails(loginPageResponse);
+    let authenticator = getAuthenticator(authenticatorType);
+    let successful = await authenticator.authenticate(loginDetails.username, loginDetails.password, pageUrl);
 
-    let loginResponse = await fetch(loginUrl, {
-        method: 'POST',
-        headers: config.loginSequence.postHeaders,
-        body: loginForm
-    });
-
-    let samlRequestData = await scrapeSAMLRequestData(loginResponse);
-    let result = await fetch(samlRequestData.url, {
-        method: 'POST',
-        headers: config.loginSequence.postHeaders,
-        body: samlRequestData.formData
-    });
-
-    if (result.ok) {
-        console.log('logged in as: ' + loginForm.get(config.loginSequence.field.username));
+    if (successful) {
+        console.log('logged in as: ' + loginDetails.username);
     }
-
     redirectBack();
-}
-
-async function getFormDetails(fetchResponse) {
-    let csrfToken = getCSRFToken(await fetchResponse.text());
-
-    let formData = new URLSearchParams();
-    formData.append(fieldNames.csrfToken, csrfToken);
-    formData.append(fieldNames.username, loginDetails.username);
-    formData.append(fieldNames.password, loginDetails.password);
-    formData.append(fieldNames.eventIdProceed, '');
-
-    return formData;
-}
-
-async function scrapeSAMLRequestData(fetchResponse) {
-    let domString = await fetchResponse.text();
-    let relayStateInput = $(`input[name="${fieldNames.relayState}"]`, $(domString));
-    let url = relayStateInput.parents('form:first').prop('action');
-    let relayState = relayStateInput.val()
-    let samlResponse = $(`input[name="${fieldNames.samlResponse}"]`, $(domString)).val();
-
-    let formData = new URLSearchParams();
-    formData.append(fieldNames.relayState, relayState);
-    formData.append(fieldNames.samlResponse, samlResponse);
-
-    return {
-        url: url,
-        formData: formData
-    };
-}
-
-function getCSRFToken(domString) {
-    let value = $(`input[name="${fieldNames.csrfToken}"]`, $(domString)).val();
-    return value;
 }
 
 function redirectBack() {
