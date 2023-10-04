@@ -17,8 +17,6 @@ class DefaultAuthenticator {
         let specificCopy = JSON.parse(JSON.stringify(config.authenticators[this.#name]))
         this.#authConfig = { ...defaultCopy, ...specificCopy };
         this.#fieldNames = this.#authConfig.field;
-
-        console.log(this.#authConfig);
     }
 
     getName() {
