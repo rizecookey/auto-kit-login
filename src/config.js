@@ -53,7 +53,7 @@ const config = {
         },
         'oidc-wiwi': {
             cookies: {
-                session: 'ASP.NET_SessionId'
+                session: '.AspNet.SharedCookie'
             }
         },
         gitlab: {

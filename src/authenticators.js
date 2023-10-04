@@ -1,5 +1,3 @@
-let $ = require('jquery');
-let browser = require('webextension-polyfill');
 const configLoader = require('./config');
 const config = configLoader.getConfig();
 
@@ -47,6 +45,7 @@ class DefaultAuthenticator {
         let loginUrl = loginPageResponse.url;
         let loginForm = await this.getFormDetails(username, password, loginPageResponse);
 
+        console.log(`sending login form to ${loginUrl}`);
         return await fetch(loginUrl, {
             method: 'POST',
             headers: config.loginSequence.postHeaders,
@@ -55,15 +54,19 @@ class DefaultAuthenticator {
     }
 
     async autoSubmitForm(response) {
-        let doc = $(await response.text());
-        let form = doc.filter('form').first();
+        let doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+        let form = doc.forms[0];
 
         let formData = new URLSearchParams();
-        let url = form.attr('action');
-        form.find('input').each((index, child) => {
-            formData.append(child.name, child.value);
-        });
+        let responseURL = new URL(response.url);
+        let url = new URL(form.getAttribute('action'), responseURL.origin + responseURL.pathname).toString();
+        let elementsCollection = form.getElementsByTagName('input');
+        for (let i = 0; i < elementsCollection.length; i++) {
+            let element = elementsCollection.item(i);
+            formData.append(element.name, element.value); 
+        }
 
+        console.log(`auto-submitting form from ${response.url} to ${url}`);
         return await fetch(url, {
             method: 'POST',
             headers: this.getAuthConfig().postHeaders,
@@ -72,7 +75,8 @@ class DefaultAuthenticator {
     }
     
     async getFormDetails(username, password, fetchResponse) {
-        let csrfToken = this.getCSRFToken(await fetchResponse.text());
+        let doc = new DOMParser().parseFromString(await fetchResponse.text(), 'text/html');
+        let csrfToken = this.getCSRFToken(doc);
     
         let formData = new URLSearchParams();
         formData.append(this.#fieldNames.csrfToken, csrfToken);
@@ -83,8 +87,8 @@ class DefaultAuthenticator {
         return formData;
     }
     
-    getCSRFToken(domString) {
-        let value = $(`input[name="${this.#fieldNames.csrfToken}"]`, $(domString)).val();
+    getCSRFToken(document) {
+        let value = document.querySelector(`input[name="${this.#fieldNames.csrfToken}"]`).value;
         return value;
     }
 }

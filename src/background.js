@@ -123,8 +123,6 @@ async function onAuthRequest(sender, data) {
 
 async function onAuthError(error) {
     console.log(`authenticator tab reported error: ${error.message}`);
-    console.log(error.stack);
-    await deleteCredentials();
 }
 
 async function runAuthRedirect(tabId, authRedirectData) {

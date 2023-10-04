@@ -4,7 +4,7 @@
 <head>
     <title>Authenticating...</title>
     <link rel="stylesheet" href="authenticating.css">
-    <script src="auth_scrape.js"></script>
+    <script src="authentication.js" defer></script>
 </head>
 
 <body>
@@ -12,7 +12,10 @@
         <h1>Authenticating...</h1>
         Auto KIT Login detected that you are currently not
         logged in on <b><span id="orig_page_url"></span></b>!
-        Logging you in in the background...
+        Logging you in in the background...<br/><br/>
+        <div class="log">
+            <pre id="log"></pre>
+        </div>
     </div>
 </body>
 

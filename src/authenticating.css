@@ -11,7 +11,7 @@ html {
     font-family: 'Segoe UI', sans-serif;
     font-style: normal;
     font-weight: 300;
-    font-size: 2em;
+    font-size: large;
 }
 
 .main {
@@ -21,5 +21,23 @@ html {
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
-    max-width: 40em;
+    width: 50%;
+    height: 50%;
+}
+
+.log {
+    text-align: left;
+    display: block;
+    width: 100%;
+    max-height: 50%;
+    min-height: 10%;
+    border: 1px solid white;
+    margin: 1px;
+    font-size: medium;
+    overflow-x: scroll;
+    overflow-y: scroll;
+}
+
+pre#log {
+    margin: 5px;
 }

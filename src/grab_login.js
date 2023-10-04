@@ -1,20 +1,20 @@
 let browser = require('webextension-polyfill');
 
-let $ = require('jquery');
 const configLoader = require('./config');
 const config = configLoader.getConfig();
 
-$(document).on('submit', 'form', () => grabAndSave());
-
-browser.runtime.sendMessage({
-    credentialGrabber: {
-        initialized: true
-    }
-});
+window.onload = function() {
+    document.forms[0].onsubmit = grabAndSave;
+    browser.runtime.sendMessage({
+        credentialGrabber: {
+            initialized: true
+        }
+    });
+}
 
 function grabAndSave() {
-    let username = $(`input[name="${config.loginSequence.field.username}"]`).val();
-    let password = $(`input[name="${config.loginSequence.field.password}"]`).val();
+    let username = document.querySelector(`input[name="${config.loginSequence.field.username}"]`).value;
+    let password = document.querySelector(`input[name="${config.loginSequence.field.password}"]`).value;
 
     browser.storage.local.set({
         loginDetails: {

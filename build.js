@@ -8,7 +8,7 @@ const SRC_DIR = 'src/';
 const OUT_DIR = 'dist/';
 const PLATFORMS = ['chrome', 'firefox'];
 const FINAL_SCRIPTS = [
-    "auth_scrape.js",
+    "authentication.js",
     "background.js",
     "grab_login.js"
 ];
