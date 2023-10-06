@@ -27,23 +27,19 @@ const config = {
         {
             name: 'KIT WiWi-Portal',
             hostname: 'portal.wiwi.kit.edu',
-            loginPage: 'https://portal.wiwi.kit.edu/Account/LoginOpenIdConnect?ReturnUrl=/',
+            loginPage: 'https://portal.wiwi.kit.edu/Account/LoginOpenIdConnect',
             authenticator: 'oidc-wiwi'
         }
     ],
+    idpUrl: 'https://idp.scc.kit.edu/idp',
+    filters: {
+        login: 'https://idp.scc.kit.edu/idp/profile/SAML2/Redirect/SSO**',
+        logout: 'https://idp.scc.kit.edu/idp/profile/SAML2/Redirect/SLO**'
+    },
     authenticators: {
         default: {
             cookies: {
                 session: '_shibsession'
-            },
-            field: {
-                csrfToken: 'csrf_token',
-                username: 'j_username',
-                password: 'j_password',
-                eventIdProceed: '_eventId_proceed'
-            },
-            postHeaders: {
-                'Content-Type': 'application/x-www-form-urlencoded'
             }
         },
         'oidc-campus-plus': {
@@ -60,17 +56,6 @@ const config = {
             cookies: {
                 session: '_shibsession'
             }
-        }
-    },
-    loginSequence: {
-        url: {
-            idp: 'https://idp.scc.kit.edu/idp',
-            login: 'https://idp.scc.kit.edu/idp/profile/SAML2/Redirect/SSO**',
-            logout: 'https://idp.scc.kit.edu/idp/profile/SAML2/Redirect/SLO**'
-        },
-        field: {
-            username: 'j_username',
-            password: 'j_password'
         }
     },
     extension: {

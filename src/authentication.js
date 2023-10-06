@@ -1,4 +1,5 @@
-let browser = require('webextension-polyfill');
+const browser = require('webextension-polyfill');
+const { InvalidLoginError } = require('./error_types');
 
 const configLoader = require('./config');
 const config = configLoader.getConfig();
@@ -23,7 +24,8 @@ async function start() {
             auth: {
                 error: {
                     message: error.message,
-                    stack: error.stack
+                    stack: error.stack,
+                    deleteLogin: error instanceof InvalidLoginError
                 }
             }
         });
@@ -44,7 +46,7 @@ async function setup() {
     originalPageUrlSpan.innerText = new URL(loginPage).hostname;
 }
 
-var tagsToReplace = {
+const tagsToReplace = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;'

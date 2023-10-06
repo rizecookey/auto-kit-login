@@ -1,20 +1,34 @@
 const configLoader = require('./config');
+const { InvalidLoginError } = require('./error_types');
+
 const config = configLoader.getConfig();
+const domParser = new DOMParser();
+
+const idpUrl = config.idpUrl;
+
+const loginFormPostHeaders = {
+    postHeaders: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+}
 
 class DefaultAuthenticator {
     static DEFAULT_AUTH_CONFIG = config.authenticators['default'];
-    static DEFAULT_FIELD_NAMES = this.DEFAULT_AUTH_CONFIG.field;
+    static FIELD_NAMES = {
+        csrfToken: 'csrf_token',
+        username: 'j_username',
+        password: 'j_password',
+        eventIdProceed: '_eventId_proceed'
+    };
 
     #name;
     #authConfig;
-    #fieldNames;
 
     constructor(name) {
         this.#name = name;
         let defaultCopy = JSON.parse(JSON.stringify(DefaultAuthenticator.DEFAULT_AUTH_CONFIG));
         let specificCopy = JSON.parse(JSON.stringify(config.authenticators[this.#name]))
         this.#authConfig = { ...defaultCopy, ...specificCopy };
-        this.#fieldNames = this.#authConfig.field;
     }
 
     getName() {
@@ -25,40 +39,49 @@ class DefaultAuthenticator {
         return this.#authConfig;
     }
 
-    getFieldNames() {
-        return this.#fieldNames;
-    }
-
-    isLoggedIn(cookies) {
-        return cookies.find(cookie => 
-            cookie.name.startsWith(this.#authConfig.cookies.session));
-    }
-
     async authenticate(username, password, pageUrl) {
-        let loginResponse = await this.makeLoginRequest(username, password, pageUrl);
-
-        return (await this.autoSubmitForm(loginResponse)).ok;
+        return (await this.makeIdpLoginRequest(username, password, pageUrl)).ok;
     }
 
-    async makeLoginRequest(username, password, pageUrl) {
+    async makeIdpLoginRequest(username, password, pageUrl) {
         let loginPageResponse = await fetch(pageUrl);
         let loginUrl = loginPageResponse.url;
-        let loginForm = await this.getFormDetails(username, password, loginPageResponse);
+
+        let responseClone = loginPageResponse.clone();
+
+        let loginDoc = await parseResponseToDoc(loginPageResponse);
+        if (!this.hasLoginForm(loginDoc)) {
+            console.log('IDP login skipped');
+            return responseClone;
+        }
+
+        let loginForm = await this.getFormDetails(username, password, loginDoc);
 
         console.log(`sending login form to ${loginUrl}`);
-        return await fetch(loginUrl, {
+        let formPostResponse = await fetch(loginUrl, {
             method: 'POST',
-            headers: config.loginSequence.postHeaders,
+            headers: loginFormPostHeaders,
             body: loginForm
         });
+
+        let responseDoc = await parseResponseToDoc(formPostResponse);
+        if (this.hasLoginForm(responseDoc)) { // means we're still on the login page
+            throw new InvalidLoginError();
+        }
+
+        return await this.autoSubmitForm(formPostResponse.url, responseDoc);
     }
 
-    async autoSubmitForm(response) {
-        let doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+    hasLoginForm(doc) {
+        return getInputField(doc, DefaultAuthenticator.FIELD_NAMES.username)
+                && getInputField(doc, DefaultAuthenticator.FIELD_NAMES.password);
+    }
+
+    async autoSubmitForm(originalUrl, doc) {
         let form = doc.forms[0];
 
         let formData = new URLSearchParams();
-        let responseURL = new URL(response.url);
+        let responseURL = new URL(originalUrl);
         let url = new URL(form.getAttribute('action'), responseURL.origin + responseURL.pathname).toString();
         let elementsCollection = form.getElementsByTagName('input');
         for (let i = 0; i < elementsCollection.length; i++) {
@@ -66,46 +89,47 @@ class DefaultAuthenticator {
             formData.append(element.name, element.value); 
         }
 
-        console.log(`auto-submitting form from ${response.url} to ${url}`);
+        console.log(`auto-submitting form from ${originalUrl} to ${url}`);
         return await fetch(url, {
             method: 'POST',
-            headers: this.getAuthConfig().postHeaders,
+            headers: loginFormPostHeaders,
             body: formData
         });
     }
     
-    async getFormDetails(username, password, fetchResponse) {
-        let doc = new DOMParser().parseFromString(await fetchResponse.text(), 'text/html');
+    async getFormDetails(username, password, doc) {
         let csrfToken = this.getCSRFToken(doc);
     
         let formData = new URLSearchParams();
-        formData.append(this.#fieldNames.csrfToken, csrfToken);
-        formData.append(this.#fieldNames.username, username);
-        formData.append(this.#fieldNames.password, password);
-        formData.append(this.#fieldNames.eventIdProceed, '');
+        formData.append(DefaultAuthenticator.FIELD_NAMES.csrfToken, csrfToken);
+        formData.append(DefaultAuthenticator.FIELD_NAMES.username, username);
+        formData.append(DefaultAuthenticator.FIELD_NAMES.password, password);
+        formData.append(DefaultAuthenticator.FIELD_NAMES.eventIdProceed, '');
     
         return formData;
     }
     
     getCSRFToken(document) {
-        let value = document.querySelector(`input[name="${this.#fieldNames.csrfToken}"]`).value;
+        let value = getInputField(document, DefaultAuthenticator.FIELD_NAMES.csrfToken).value;
         return value;
     }
 }
 
 class OIDCAuthenticator extends DefaultAuthenticator {
-    isLoggedIn(cookies) {
-        return cookies.find(cookie => 
-            cookie.name.startsWith(this.getAuthConfig().cookies.session));
-    }
-
     async authenticate(username, password, pageUrl) {
-        let loginResponse = await this.makeLoginRequest(username, password, pageUrl);
-    
-        let samlResponse = await this.autoSubmitForm(loginResponse);
+        let loginResponse = await this.makeIdpLoginRequest(username, password, pageUrl);
 
-        return (await this.autoSubmitForm(samlResponse)).ok;
+        let responseDoc = await parseResponseToDoc(loginResponse);
+        return (await this.autoSubmitForm(loginResponse.url, responseDoc)).ok;
     }
+}
+
+async function parseResponseToDoc(response) {
+    return domParser.parseFromString(await response.text(), 'text/html');
+}
+
+function getInputField(doc, name) {
+    return doc.querySelector(`input[name=${name}]`);
 }
 
 function getAuthenticator(type) {
