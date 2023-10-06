@@ -47,10 +47,12 @@ class DefaultAuthenticator {
         let loginPageResponse = await fetch(pageUrl);
         let loginUrl = loginPageResponse.url;
 
+        let responseClone = loginPageResponse.clone();
+
         let loginDoc = await parseResponseToDoc(loginPageResponse);
         if (!this.hasLoginForm(loginDoc)) {
             console.log('IDP login skipped');
-            return loginPageResponse;
+            return responseClone;
         }
 
         let loginForm = await this.getFormDetails(username, password, loginDoc);
