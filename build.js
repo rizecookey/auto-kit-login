@@ -9,8 +9,7 @@ const OUT_DIR = 'dist/';
 const PLATFORMS = ['chrome', 'firefox'];
 const FINAL_SCRIPTS = [
     "authentication.js",
-    "background.js",
-    "grab_login.js"
+    "background.js"
 ];
 
 async function build() {
