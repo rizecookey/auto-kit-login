@@ -60,7 +60,7 @@ function safeTagsReplace(str) {
     if (!str) {
         return str;
     }
-    return str.replace(/[&<>]/g, replaceTag);
+    return `${str}`.replace(/[&<>]/g, replaceTag);
 }
 
 function overwriteConsole() {
