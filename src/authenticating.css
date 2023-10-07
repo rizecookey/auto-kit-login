@@ -11,7 +11,7 @@ html {
     font-family: 'Segoe UI', sans-serif;
     font-style: normal;
     font-weight: 300;
-    font-size: large;
+    font-size: 1.5em;
 }
 
 .main {
@@ -29,8 +29,7 @@ html {
     text-align: left;
     display: block;
     width: 100%;
-    max-height: 50%;
-    min-height: 10%;
+    height: 50%;
     border: 1px solid white;
     margin: 1px;
     font-size: medium;
