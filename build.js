@@ -8,8 +8,9 @@ const SRC_DIR = 'src/';
 const OUT_DIR = 'dist/';
 const PLATFORMS = ['chrome', 'firefox'];
 const FINAL_SCRIPTS = [
-    "authentication.js",
-    "background.js"
+    "authenticator/authentication.js",
+    "background/background.js",
+    "popup/popup.js"
 ];
 
 async function build() {

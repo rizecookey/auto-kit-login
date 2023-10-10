@@ -1,0 +1,21 @@
+@font-face {
+    font-family: 'JetBrains-Mono';
+    src: url('/resources/fonts/jetbrains-mono/JetBrainsMono-VariableFont_wght.ttf');
+}
+
+:root {
+    --main-color: white;
+    --background-color: black;
+    --opacity: 0;
+}
+
+html {
+    color: var(--main-color);
+    background-color: var(--background-color);
+}
+
+body {
+    font-family: 'JetBrains-Mono', monospace;
+    font-style: normal;
+    font-size: 16px;
+}

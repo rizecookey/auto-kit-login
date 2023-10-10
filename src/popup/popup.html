@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+
+<head>
+    <title>User Configuration</title>
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="../common_style.css">
+    <script src="popup.js" defer></script>
+</head>
+
+<body>
+    <h1>User Configuration</h1>
+    <div class="user_config table">
+        <div class="table_row">
+            <div class="table_cell name">Enable autologin</div>
+            <div class="table_cell toggle"><input type="checkbox" id="enable_autologin"></div>
+        </div>
+        <br/>
+        <div class="table_row">
+            <div class="table_cell"><u>Enable autologin for:</u></div>
+        </div>
+        <span id="page_config" class="table"></span>
+    </div>
+</body>

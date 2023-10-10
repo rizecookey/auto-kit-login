@@ -1,5 +1,6 @@
 const browser = require('webextension-polyfill');
-const configLoader = require('./config');
+const configLoader = require('../config');
+const userConfigManager = require('../user_config');
 
 const config = configLoader.getConfig();
 
@@ -7,8 +8,9 @@ const logoutUrlFilter = config.filters.logout;
 
 let navigationIncomplete = false;
 
-async function shouldAutoLogin() {
-    return !navigationIncomplete && await isLoginSaved();
+async function shouldAutoLogin(pageId) {
+    let userConfig = await userConfigManager.get();
+    return userConfig.enabled && userConfig.autologinPages[pageId] && !navigationIncomplete && await isLoginSaved();
 }
 async function isLoginSaved() {
     let loginDetails = (await browser.storage.local.get('loginDetails')).loginDetails;

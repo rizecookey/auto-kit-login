@@ -1,7 +1,7 @@
 const browser = require('webextension-polyfill');
 const loginUtils = require('./login_utils')
 
-const configLoader = require('./config');
+const configLoader = require('../config');
 const config = configLoader.getConfig();
 const idpUrl = config.idpUrl;
 const autologinPageFilters = configLoader.getAutologinPageFilters();
@@ -9,13 +9,9 @@ const autologinPageFilters = configLoader.getAutologinPageFilters();
 const pageParameters = config.extension.pageParameters;
 
 async function onVisitAuthenticatablePage(details) {
-    if (!await loginUtils.shouldAutoLogin()) {
-        return;
-    }
-
     let domain = new URL(details.url).hostname;
     let pageDetailsId = findMatchingPageDetailsId(domain);
-    if (!pageDetailsId) {
+    if (!pageDetailsId || !await loginUtils.shouldAutoLogin(pageDetailsId)) {
         return;
     }
     let pageDetails = config.pages[pageDetailsId];
@@ -71,7 +67,7 @@ async function redirectAndAuthenticate(tabId, pageDetailsId, originalPage) {
     params.append(pageParameters.redirect, originalPage);
     params.append(pageParameters.pageDetailsId, pageDetailsId)
     browser.tabs.update(tabId, {
-        url: `authenticating.html?${params.toString()}`
+        url: `authenticator/authenticating.html?${params.toString()}`
     });
     console.log('starting authentication on tab ' + tabId);
 }

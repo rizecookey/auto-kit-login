@@ -3,6 +3,7 @@
 
 <head>
     <title>Authenticating...</title>
+    <link rel="stylesheet" href="../common_style.css">
     <link rel="stylesheet" href="authenticating.css">
     <script src="authentication.js" defer></script>
 </head>
@@ -15,7 +16,10 @@
         Logging you in in the background...
         <br/><br/>
         <div class="login_error" id="login_error">
-            An error has occured while trying to authenticate, for more information see the log below.
+            An error has occured while trying to authenticate, 
+            for more information see the log below.<br>
+            <button id="return">Disable authentication for this page</button>
+            <button id="retry">Retry authentication</button>
             <br/><br/>
         </div>
         <div class="log">

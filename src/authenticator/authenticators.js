@@ -1,5 +1,5 @@
-const configLoader = require('./config');
-const { InvalidLoginError } = require('./error_types');
+const configLoader = require('../config');
+const { InvalidLoginError } = require('../error_types');
 
 const config = configLoader.getConfig();
 const domParser = new DOMParser();
@@ -26,7 +26,7 @@ class DefaultAuthenticator {
         this.#name = name;
         let defaultCopy = JSON.parse(JSON.stringify(config.authenticators[this.#name]));
         let override = config.pages[pageId].override;
-        let specificCopy = JSON.parse(JSON.stringify(override ? override : {}))
+        let specificCopy = JSON.parse(JSON.stringify(override || {}))
         this.#authConfig = { ...defaultCopy, ...specificCopy };
     }
 

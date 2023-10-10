@@ -7,7 +7,8 @@
         "*://*.kit.edu/"
     ],
     "action": {
-        "default_icon": "kit_cookie.png"
+        "default_icon": "kit_cookie.png",
+        "default_popup": "popup/popup.html"
     },
     "permissions": [
         "webNavigation",
@@ -21,12 +22,12 @@
             "extension_ids": [
                 "autokitlogin@rizecookey.net"
             ],
-            "resources": ["authenticating.html"]
+            "resources": ["authenticator/authenticating.html"]
         }
     ],
     "background": {
         "scripts": [
-            "background.js"
+            "background/background.js"
         ]
     },
     "icons": {

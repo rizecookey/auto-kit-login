@@ -1,10 +1,11 @@
 const browser = require('webextension-polyfill');
-const { InvalidLoginError } = require('./error_types');
+const { InvalidLoginError } = require('../error_types');
 
-const configLoader = require('./config');
-const config = configLoader.getConfig();
-
+const configLoader = require('../config');
+const userConfigManager = require('../user_config');
 const { getAuthenticator } = require('./authenticators');
+
+const config = configLoader.getConfig();
 const pageParameters = config.extension.pageParameters;
 
 let logger;
@@ -43,15 +44,29 @@ async function setup() {
     let url = new URL(window.location.href);
 
     pageDetailsId = url.searchParams.get(pageParameters.pageDetailsId);
-    pageDetails = config.pages[pageDetailsId];
+    let pageDetails = config.pages[pageDetailsId];
 
     loginPage = pageDetails.loginPage;
     authenticatorType = pageDetails.authenticator;
     redirectTo = url.searchParams.get(pageParameters.redirect);
     loginDetails = await fetchLoginDetails();
+
     let originalPageUrlSpan = document.getElementById('orig_page_url');
     originalPageUrlSpan.innerText = new URL(loginPage).hostname;
     errorDiv = document.getElementById('login_error');
+    document.getElementById('retry').onclick = function() {
+        location.reload();
+        return true;
+    };
+    document.getElementById('return').onclick = async function() {
+        let newUserConfig = {
+            autologinPages: {}
+        };
+        newUserConfig.autologinPages[pageDetailsId] = false;
+        await userConfigManager.set(newUserConfig);
+        location.href = redirectTo;
+        return true;
+    };
 }
 
 const tagsToReplace = {

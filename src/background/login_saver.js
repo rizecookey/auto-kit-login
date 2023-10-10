@@ -1,6 +1,6 @@
 const browser = require('webextension-polyfill');
 const loginUtils = require('./login_utils');
-const configLoader = require('./config');
+const configLoader = require('../config');
 
 const autologinPageFilters = configLoader.getAutologinPageFilters();
 const config = configLoader.getConfig();
