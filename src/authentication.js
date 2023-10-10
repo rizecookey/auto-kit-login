@@ -13,6 +13,8 @@ let authenticatorType;
 let redirectTo;
 let loginDetails;
 
+let errorDiv;
+
 async function start() {
     await setup();
     console.log('current user: ' + loginDetails.username);
@@ -29,6 +31,7 @@ async function start() {
                 }
             }
         });
+        errorDiv.style.display = 'block';
     }
 }
 
@@ -44,6 +47,7 @@ async function setup() {
     loginDetails = await fetchLoginDetails();
     let originalPageUrlSpan = document.getElementById('orig_page_url');
     originalPageUrlSpan.innerText = new URL(loginPage).hostname;
+    errorDiv = document.getElementById('login_error');
 }
 
 const tagsToReplace = {
