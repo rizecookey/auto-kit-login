@@ -4,8 +4,6 @@ const { InvalidLoginError } = require('./error_types');
 const config = configLoader.getConfig();
 const domParser = new DOMParser();
 
-const idpUrl = config.idpUrl;
-
 const loginFormPostHeaders = {
     postHeaders: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -24,10 +22,11 @@ class DefaultAuthenticator {
     #name;
     #authConfig;
 
-    constructor(name) {
+    constructor(name, pageId) {
         this.#name = name;
-        let defaultCopy = JSON.parse(JSON.stringify(DefaultAuthenticator.DEFAULT_AUTH_CONFIG));
-        let specificCopy = JSON.parse(JSON.stringify(config.authenticators[this.#name]))
+        let defaultCopy = JSON.parse(JSON.stringify(config.authenticators[this.#name]));
+        let override = config.pages[pageId].override;
+        let specificCopy = JSON.parse(JSON.stringify(override ? override : {}))
         this.#authConfig = { ...defaultCopy, ...specificCopy };
     }
 
@@ -132,15 +131,14 @@ function getInputField(doc, name) {
     return doc.querySelector(`input[name=${name}]`);
 }
 
-function getAuthenticator(type) {
+function getAuthenticator(type, pageId) {
     switch (type) {
-        case 'oidc-campus-plus':
-        case 'oidc-wiwi':
-            return new OIDCAuthenticator(type);
+        case 'oidc':
+            return new OIDCAuthenticator(type, pageId);
         case 'gitlab':
         case 'default':
         default:
-            return new DefaultAuthenticator(type);
+            return new DefaultAuthenticator(type, pageId);
     }
 }
 

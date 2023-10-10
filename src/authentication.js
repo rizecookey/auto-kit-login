@@ -8,6 +8,7 @@ const { getAuthenticator } = require('./authenticators');
 const pageParameters = config.extension.pageParameters;
 
 let logger;
+let pageDetailsId;
 let loginPage;
 let authenticatorType;
 let redirectTo;
@@ -38,9 +39,12 @@ async function setup() {
 
     let url = new URL(window.location.href);
 
-    loginPage = url.searchParams.get(pageParameters.loginUrl);
+    pageDetailsId = url.searchParams.get(pageParameters.pageDetailsId);
+    pageDetails = config.pages[pageDetailsId];
+
+    loginPage = pageDetails.loginPage;
+    authenticatorType = pageDetails.authenticator;
     redirectTo = url.searchParams.get(pageParameters.redirect);
-    authenticatorType = url.searchParams.get(pageParameters.authenticatorType);
     loginDetails = await fetchLoginDetails();
     let originalPageUrlSpan = document.getElementById('orig_page_url');
     originalPageUrlSpan.innerText = new URL(loginPage).hostname;
@@ -94,7 +98,7 @@ function printToLog(arguments, error) {
 }
 
 async function makeLoginRequest(pageUrl) {
-    let authenticator = getAuthenticator(authenticatorType);
+    let authenticator = getAuthenticator(authenticatorType, pageDetailsId);
     let successful = await authenticator.authenticate(loginDetails.username, loginDetails.password, pageUrl);
 
     if (successful) {

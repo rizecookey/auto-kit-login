@@ -14,38 +14,44 @@ async function onVisitAuthenticatablePage(details) {
     }
 
     let domain = new URL(details.url).hostname;
-    let pageDetails = findMatchingPageDetails(domain);
-
-    if (!pageDetails) {
+    let pageDetailsId = findMatchingPageDetailsId(domain);
+    if (!pageDetailsId) {
         return;
     }
+    let pageDetails = config.pages[pageDetailsId];
 
     if (!await sessionCookiePresent(domain, pageDetails)) {
         await clearPreviousCookies();
-        await redirectAndAuthenticate(details.tabId, pageDetails, details.url);
+        await redirectAndAuthenticate(details.tabId, pageDetailsId, details.url);
     }
 }
 
-function findMatchingPageDetails(domain) {
-    let pageDetails;
+function findMatchingPageDetailsId(domain) {
+    let pageIdFound;
 
-    for (let page of config.pages) {
+    for (let pageId in config.pages) {
+        let page = config.pages[pageId];
         if (domain.includes(page.hostname)) {
-            pageDetails = page;
+            pageIdFound = pageId;
         }
     }
 
-    return pageDetails;
+    return pageIdFound;
 }
 
 async function sessionCookiePresent(domain, pageDetails) {
-    let needed = config.authenticators[pageDetails.authenticator].cookies.session;
+    let authenticatorConfig = getAuthenticatorConfig(pageDetails);
+    let needed = authenticatorConfig.cookies.session;
 
     let cookies = await browser.cookies.getAll({
         domain: domain
     });
 
     return cookies.find(element => element.name.startsWith(needed));
+}
+
+function getAuthenticatorConfig(pageDetails) {
+    return {...config.authenticators[pageDetails.authenticator], ...(pageDetails?.override ? pageDetails.override : {})};
 }
 
 async function clearPreviousCookies() {
@@ -60,11 +66,10 @@ async function clearPreviousCookies() {
     }
 }
 
-async function redirectAndAuthenticate(tabId, pageDetails, originalPage) {
+async function redirectAndAuthenticate(tabId, pageDetailsId, originalPage) {
     let params = new URLSearchParams();
-    params.append(pageParameters.loginUrl, pageDetails.loginPage);
     params.append(pageParameters.redirect, originalPage);
-    params.append(pageParameters.authenticatorType, pageDetails.authenticator)
+    params.append(pageParameters.pageDetailsId, pageDetailsId)
     browser.tabs.update(tabId, {
         url: `authenticating.html?${params.toString()}`
     });
