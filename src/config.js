@@ -34,6 +34,12 @@ const config = {
                     session: '.AspNet.SharedCookie'
                 }
             }
+        },
+        gitlab: {
+            name: 'KIT GitLab',
+            hostname: 'gitlab.kit.edu',
+            loginPage: 'https://gitlab.kit.edu/users/sign_in',
+            authenticator: 'fels'
         }
     },
     idpUrl: 'https://idp.scc.kit.edu/idp',
@@ -52,9 +58,9 @@ const config = {
                 session: '.AspNetCore.Identity.Application'
             }
         },
-        gitlab: {
+        fels: {
             cookies: {
-                session: '_shibsession'
+                session: 'known_sign_in'
             }
         }
     },

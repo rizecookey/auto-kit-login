@@ -79,14 +79,9 @@ class DefaultAuthenticator {
     async autoSubmitForm(originalUrl, doc) {
         let form = doc.forms[0];
 
-        let formData = new URLSearchParams();
+        let formData = this.scrapePresetFormDetails(doc, 0);
         let responseURL = new URL(originalUrl);
         let url = new URL(form.getAttribute('action'), responseURL.origin + responseURL.pathname).toString();
-        let elementsCollection = form.getElementsByTagName('input');
-        for (let i = 0; i < elementsCollection.length; i++) {
-            let element = elementsCollection.item(i);
-            formData.append(element.name, element.value); 
-        }
 
         console.log(`auto-submitting form from ${originalUrl} to ${url}`);
         return await fetch(url, {
@@ -94,6 +89,19 @@ class DefaultAuthenticator {
             headers: loginFormPostHeaders,
             body: formData
         });
+    }
+
+    scrapePresetFormDetails(doc, formId) {
+        let formData = new URLSearchParams();
+
+        let form = doc.forms[formId];
+        let elementsCollection = form.getElementsByTagName('input');
+        for (let i = 0; i < elementsCollection.length; i++) {
+            let element = elementsCollection.item(i);
+            formData.append(element.name, element.value);
+        }
+
+        return formData;
     }
     
     async getFormDetails(username, password, doc) {
@@ -123,6 +131,68 @@ class OIDCAuthenticator extends DefaultAuthenticator {
     }
 }
 
+class FELSAuthenticator extends DefaultAuthenticator {
+    static LOGIN_PAGE = "https://fels.scc.kit.edu/Shibboleth.sso/Login";
+    static FELS_FORM_DEFAULTS_KIT = {
+        'javax.faces.partial.ajax': 'true',
+        'javax.faces.source': 'login',
+        'javax.faces.partial.execute': '@all',
+        'javax.faces.partial.render': 'form',
+        'login': 'login',
+        'form': 'form',
+        'filterText': 'kit',
+        'idpBox_input': 'i_1002'
+    }
+
+    static VIEWSTATE_FIELD = "javax.faces.ViewState";
+
+    async authenticate(username, password, pageUrl) {
+        let signInPageResponse = await this.initiateAuthentication(pageUrl);
+
+        await this.selectKITOnFELSPage(signInPageResponse);
+        
+        return (await this.makeIdpLoginRequest(username, password, FELSAuthenticator.LOGIN_PAGE)).ok;
+    }
+
+    async initiateAuthentication(pageUrl) {
+        console.log(`loading login page from ${pageUrl}`);
+        let pageLoadResponse = await fetch(pageUrl, {
+            method: 'GET'
+        });
+
+        let document = await parseResponseToDoc(pageLoadResponse);
+        return await this.autoSubmitForm(pageUrl, document);
+    }
+
+    async selectKITOnFELSPage(response) {
+        console.log(`selecting KIT on ${response.url}`);
+
+        let doc = await parseResponseToDoc(response);
+        let formData = this.fillFELSSelectionForm(doc);
+        formData.set(FELSAuthenticator.PROVIDER_SELECTION, FELSAuthenticator.PROVIDER_KIT);
+        return await fetch(response.url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+    }
+
+    fillFELSSelectionForm(doc) {
+        let formData = new URLSearchParams();
+
+        for (let fieldName in FELSAuthenticator.FELS_FORM_DEFAULTS_KIT) {
+            formData.append(fieldName, FELSAuthenticator.FELS_FORM_DEFAULTS_KIT[fieldName]);
+        }
+
+        let viewState = doc.querySelector(`input[name="${FELSAuthenticator.VIEWSTATE_FIELD}"]`);
+        formData.append(FELSAuthenticator.VIEWSTATE_FIELD, viewState.value);
+
+        return formData;
+    }
+}
+
 async function parseResponseToDoc(response) {
     return domParser.parseFromString(await response.text(), 'text/html');
 }
@@ -135,7 +205,8 @@ function getAuthenticator(type, pageId) {
     switch (type) {
         case 'oidc':
             return new OIDCAuthenticator(type, pageId);
-        case 'gitlab':
+        case 'fels':
+            return new FELSAuthenticator(type, pageId);
         case 'default':
         default:
             return new DefaultAuthenticator(type, pageId);
