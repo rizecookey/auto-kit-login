@@ -1,7 +1,5 @@
-const configLoader = require('../config');
 const { InvalidLoginError } = require('../error_types');
 
-const config = configLoader.getConfig();
 const domParser = new DOMParser();
 
 const loginFormPostHeaders = {
@@ -11,7 +9,6 @@ const loginFormPostHeaders = {
 }
 
 class DefaultAuthenticator {
-    static DEFAULT_AUTH_CONFIG = config.authenticators['default'];
     static FIELD_NAMES = {
         csrfToken: 'csrf_token',
         username: 'j_username',
@@ -20,22 +17,13 @@ class DefaultAuthenticator {
     };
 
     #name;
-    #authConfig;
 
     constructor(name, pageId) {
         this.#name = name;
-        let defaultCopy = JSON.parse(JSON.stringify(config.authenticators[this.#name]));
-        let override = config.pages[pageId].override;
-        let specificCopy = JSON.parse(JSON.stringify(override || {}))
-        this.#authConfig = { ...defaultCopy, ...specificCopy };
     }
 
     getName() {
         return this.#name;
-    }
-    
-    getAuthConfig() {
-        return this.#authConfig;
     }
 
     async authenticate(username, password, pageUrl) {

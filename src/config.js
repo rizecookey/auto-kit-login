@@ -4,34 +4,59 @@ const config = {
             name: 'ILIAS',
             hostname: 'ilias.studium.kit.edu',
             loginPage: 'https://ilias.studium.kit.edu/shib_login.php?target=root_1',
-            authenticator: 'default'
+            authenticator: 'default',
+            loginDetector: {
+                type: 'cookie',
+                options: {
+                    cookie: '_shibsession.*'
+                }
+            }
         },
         campus: {
             name: 'KIT Campus',
             hostname: 'campus.studium.kit.edu',
             loginPage: 'https://campus.studium.kit.edu/Shibboleth.sso/Login',
-            authenticator: 'default'
+            authenticator: 'default',
+            loginDetector: {
+                type: 'cookie',
+                options: {
+                    cookie: '_shibsession.*'
+                }
+            }
         },
         'my-scc': {
             name: 'My SCC',
             hostname: 'my.scc.kit.edu',
             loginPage: 'https://my.scc.kit.edu/shib/index.php',
-            authenticator: 'default'
+            authenticator: 'default',
+            loginDetector: {
+                type: 'cookie',
+                options: {
+                    cookie: '_shibsession.*'
+                }
+            }
         },
         'campus-plus': {
             name: 'KIT Campus Plus',
             hostname: 'plus.campus.kit.edu',
             loginPage: 'https://plus.campus.kit.edu/api/user/oidc-login',
-            authenticator: 'oidc'
+            authenticator: 'oidc',
+            loginDetector: {
+                type: 'cookie',
+                options: {
+                    cookie: '\\.AspNetCore\\.Identity\\.Application'
+                }
+            }
         },
         'wiwi-portal': {
             name: 'KIT WiWi-Portal',
             hostname: 'portal.wiwi.kit.edu',
             loginPage: 'https://portal.wiwi.kit.edu/Account/LoginOpenIdConnect',
             authenticator: 'oidc',
-            override: {
-                cookies: {
-                    session: '.AspNet.SharedCookie'
+            loginDetector: {
+                type: 'cookie',
+                options: {
+                    cookie: '\\.AspNet\\.SharedCookie'
                 }
             }
         },
@@ -39,30 +64,20 @@ const config = {
             name: 'KIT GitLab',
             hostname: 'gitlab.kit.edu',
             loginPage: 'https://gitlab.kit.edu/users/sign_in',
-            authenticator: 'fels'
+            authenticator: 'fels',
+            loginDetector: {
+                type: 'is_redirected',
+                options: {
+                    from: 'https://gitlab.kit.edu/',
+                    to: 'https://gitlab.kit.edu/users/sign_in'
+                }
+            }
         }
     },
     idpUrl: 'https://idp.scc.kit.edu/idp',
     filters: {
         login: 'https://idp.scc.kit.edu/idp/profile/SAML2/Redirect/SSO**',
         logout: 'https://idp.scc.kit.edu/idp/profile/SAML2/Redirect/SLO**'
-    },
-    authenticators: {
-        default: {
-            cookies: {
-                session: '_shibsession'
-            }
-        },
-        oidc: {
-            cookies: {
-                session: '.AspNetCore.Identity.Application'
-            }
-        },
-        fels: {
-            cookies: {
-                session: 'known_sign_in'
-            }
-        }
     },
     extension: {
         pageParameters: {

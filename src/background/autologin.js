@@ -1,7 +1,8 @@
 const browser = require('webextension-polyfill');
 const loginUtils = require('./login_utils')
-
+const { getLoginDetector } = require('./login_detectors');
 const configLoader = require('../config');
+
 const config = configLoader.getConfig();
 const idpUrl = config.idpUrl;
 const autologinPageFilters = configLoader.getAutologinPageFilters();
@@ -16,7 +17,7 @@ async function onVisitAuthenticatablePage(details) {
     }
     let pageDetails = config.pages[pageDetailsId];
 
-    if (!await sessionCookiePresent(domain, pageDetails)) {
+    if (!await isLoggedIn(domain, pageDetails)) {
         await clearPreviousCookies();
         await redirectAndAuthenticate(details.tabId, pageDetailsId, details.url);
     }
@@ -35,19 +36,11 @@ function findMatchingPageDetailsId(domain) {
     return pageIdFound;
 }
 
-async function sessionCookiePresent(domain, pageDetails) {
-    let authenticatorConfig = getAuthenticatorConfig(pageDetails);
-    let needed = authenticatorConfig.cookies.session;
+async function isLoggedIn(domain, pageDetails) {
+    let loginDetectorConfig = pageDetails.loginDetector;
+    let loginDetector = getLoginDetector(loginDetectorConfig);
 
-    let cookies = await browser.cookies.getAll({
-        domain: domain
-    });
-
-    return cookies.find(element => element.name.startsWith(needed));
-}
-
-function getAuthenticatorConfig(pageDetails) {
-    return {...config.authenticators[pageDetails.authenticator], ...(pageDetails?.override ? pageDetails.override : {})};
+    return await loginDetector.isLoggedIn(domain);
 }
 
 async function clearPreviousCookies() {
