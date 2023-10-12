@@ -64,7 +64,7 @@ function registerListeners() {
 
     browser.webRequest.onCompleted.addListener(onAuthFormRequestComplete, {
         urls: [loginUrlFilter]
-    }, ['responseHeaders', 'extraHeaders']);
+    }, ['responseHeaders']);
 
     browser.webNavigation.onCompleted.addListener(onNavigationComplete, {
         url: autologinPageFilters
