@@ -121,21 +121,35 @@ class OIDCAuthenticator extends DefaultAuthenticator {
 
 class FELSAuthenticator extends DefaultAuthenticator {
     static LOGIN_PAGE = "https://fels.scc.kit.edu/Shibboleth.sso/Login";
-    static FELS_FORM_DEFAULTS_KIT = {
-        'javax.faces.partial.ajax': 'true',
-        'javax.faces.source': 'login',
-        'javax.faces.partial.execute': '@all',
-        'javax.faces.partial.render': 'form',
+    static FELS_FORM_SELECT_KIT = {
+        'jakarta.faces.partial.ajax': 'true',
+        'jakarta.faces.source': 'searchAutocompl',
+        'jakarta.faces.partial.execute': 'searchAutocompl',
+        'jakarta.faces.partial.render': 'form',
+        'jakarta.faces.behavior.event': 'valueChange',
+        'jakarta.faces.partial.event': 'change',
+        'form': 'form',
+        'searchAutocompl_input': 'Karlsruher+Institut+für+Technologie+(KIT)',
+        'searchAutocompl_hinput': '1002'
+    };
+    static FELS_FORM_SEND_KIT = {
+        'jakarta.faces.partial.ajax': 'true',
+        'jakarta.faces.source': 'login',
+        'jakarta.faces.partial.execute': '@all',
+        'jakarta.faces.partial.render': 'form',
         'login': 'login',
         'form': 'form',
-        'filterText': 'kit',
-        'idpBox_input': 'i_1002'
+        'searchAutocompl_input': 'Karlsruher+Institut+für+Technologie+(KIT)',
+        'searchAutocompl_hinput': '1002'
     }
 
-    static VIEWSTATE_FIELD = "javax.faces.ViewState";
+    static VIEWSTATE_FIELD = "jakarta.faces.ViewState";
 
     async authenticate(username, password, pageUrl) {
         let signInPageResponse = await this.initiateAuthentication(pageUrl);
+        if (signInPageResponse.ok && new URL(signInPageResponse.url).hostname != new URL(FELSAuthenticator.LOGIN_PAGE).hostname) {
+            return signInPageResponse;
+        }
 
         await this.selectKITOnFELSPage(signInPageResponse);
         
@@ -149,6 +163,7 @@ class FELSAuthenticator extends DefaultAuthenticator {
         });
 
         let document = await parseResponseToDoc(pageLoadResponse);
+
         return await this.autoSubmitForm(pageUrl, document);
     }
 
@@ -156,22 +171,31 @@ class FELSAuthenticator extends DefaultAuthenticator {
         console.log(`selecting KIT on ${response.url}`);
 
         let doc = await parseResponseToDoc(response);
-        let formData = this.fillFELSSelectionForm(doc);
-        formData.set(FELSAuthenticator.PROVIDER_SELECTION, FELSAuthenticator.PROVIDER_KIT);
-        return await fetch(response.url, {
+        let formData = this.fillFELSSelectionForm(doc, FELSAuthenticator.FELS_FORM_SELECT_KIT);
+        const selectResponse = await fetch(response.url, {
             method: 'POST',
             body: formData,
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
         });
+
+        const sendFormData = this.fillFELSSelectionForm(doc, FELSAuthenticator.FELS_FORM_SEND_KIT);
+
+        return await fetch(selectResponse.url, {
+            method: 'POST',
+            body: sendFormData,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
     }
 
-    fillFELSSelectionForm(doc) {
+    fillFELSSelectionForm(doc, defaults) {
         let formData = new URLSearchParams();
 
-        for (let fieldName in FELSAuthenticator.FELS_FORM_DEFAULTS_KIT) {
-            formData.append(fieldName, FELSAuthenticator.FELS_FORM_DEFAULTS_KIT[fieldName]);
+        for (let fieldName in defaults) {
+            formData.append(fieldName, defaults[fieldName]);
         }
 
         let viewState = doc.querySelector(`input[name="${FELSAuthenticator.VIEWSTATE_FIELD}"]`);
