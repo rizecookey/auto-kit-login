@@ -3,7 +3,7 @@
     "browserify": "^17.0.0"
   },
   "name": "auto-kit-login",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
