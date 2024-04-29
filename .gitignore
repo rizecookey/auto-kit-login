@@ -104,5 +104,6 @@ dist
 .tern-port
 
 bundled/
+.build/
 
 chrome.pem

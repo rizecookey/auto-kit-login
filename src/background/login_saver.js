@@ -1,6 +1,9 @@
 const browser = require('webextension-polyfill');
 const loginUtils = require('./login_utils');
 const configLoader = require('../config');
+const { browserType } = require('./browser_type');
+
+const AUTH_FORM_COMPLETE_OPTS = browserType === 'chromium' ? ['responseHeaders', 'extraHeaders'] : ['responseHeaders'];
 
 const autologinPageFilters = configLoader.getAutologinPageFilters();
 const config = configLoader.getConfig();
@@ -17,11 +20,12 @@ async function onAuthFormRequest(details) {
         return;
     }
 
-    let formDetails = details.requestBody?.formData;
+    let formDetails = details.requestBody.formData;
     if (!formDetails[fieldNames.username] || !formDetails[fieldNames.password]) {
         return;
     }
 
+    console.log("captured login data")
     loginUtils.setNavigationIncomplete(true);
     lastLoginRequestData = {
         requestId: details.requestId,
@@ -37,7 +41,7 @@ async function onAuthFormRequestComplete(details) {
 
     if (headersInclude(details.responseHeaders, 'Set-Cookie')) { // login was successful
         await loginUtils.saveLogin(lastLoginRequestData.username, lastLoginRequestData.password);
-        console.log(`saved login for user '${lastLoginRequestData.username}'`);
+        console.log(`login successful, saved login for user '${lastLoginRequestData.username}'`);
     }
 
     lastLoginRequestData = undefined;
@@ -64,7 +68,7 @@ function registerListeners() {
 
     browser.webRequest.onCompleted.addListener(onAuthFormRequestComplete, {
         urls: [loginUrlFilter]
-    }, ['responseHeaders']);
+    }, AUTH_FORM_COMPLETE_OPTS);
 
     browser.webNavigation.onCompleted.addListener(onNavigationComplete, {
         url: autologinPageFilters
