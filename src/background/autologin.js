@@ -12,7 +12,7 @@ const pageParameters = config.extension.pageParameters;
 async function onVisitAuthenticatablePage(details) {
     let domain = new URL(details.url).hostname;
     let pageDetailsId = findMatchingPageDetailsId(domain);
-    if (!pageDetailsId || !await loginUtils.shouldAutoLogin(pageDetailsId)) {
+    if (!pageDetailsId || !await loginUtils.shouldAutoLogin(details.tabId, pageDetailsId)) {
         return;
     }
     let pageDetails = config.pages[pageDetailsId];
@@ -67,7 +67,7 @@ async function redirectAndAuthenticate(tabId, pageDetailsId, originalPage) {
 
 async function onAuthRequest(sender, data) {
     if (data.redirect) {
-        await runAuthRedirect(sender.tab.id, data.redirect);
+        await runAuthRedirect(sender.tab.id, data.redirect, data.pageDetailsId);
         return;
     }
 
@@ -84,8 +84,10 @@ async function onAuthError(error) {
     }
 }
 
-async function runAuthRedirect(tabId, authRedirectData) {
+async function runAuthRedirect(tabId, authRedirectData, pageDetailsId) {
     console.log(`redirecting auth tab back to '${authRedirectData.url}'`);
+
+    loginUtils.setAuthenticationPaused(tabId, pageDetailsId, true);
 
     await browser.tabs.update(tabId, {
         url: authRedirectData.url

@@ -7,10 +7,34 @@ const config = configLoader.getConfig();
 const logoutUrlFilter = config.filters.logout;
 
 let navigationIncomplete = false;
+const authenticationPausedTabs = new Map();
 
-async function shouldAutoLogin(pageId) {
+function isAuthenticationPaused(tabId, pageDetailsId) {
+    return authenticationPausedTabs.has(tabId) && authenticationPausedTabs.get(tabId).includes(pageDetailsId);
+}
+
+function setAuthenticationPaused(tabId, pageDetailsId, value) {
+    const pausedIds = authenticationPausedTabs.get(tabId) || [];
+    if (value && !pausedIds.includes(pageDetailsId)) {
+        pausedIds.push(pageDetailsId);
+    } else if (!value && pausedIds.includes(pageDetailsId)) {
+        pausedIds = pausedIds.filter(element => element == pageDetailsId);
+    }
+
+    if (pausedIds.length == 0) {
+        authenticationPausedTabs.delete(tabId);
+    } else {
+        authenticationPausedTabs.set(tabId, pausedIds);
+    }
+}
+
+function clearPausedSites(tabId) {
+    authenticationPausedTabs.delete(tabId);
+}
+
+async function shouldAutoLogin(tabId, pageId) {
     let userConfig = await userConfigManager.get();
-    return userConfig.enabled && userConfig.autologinPages[pageId] && !navigationIncomplete && await isLoginSaved();
+    return userConfig.enabled && userConfig.autologinPages[pageId] && !navigationIncomplete && await isLoginSaved() && !isAuthenticationPaused(tabId, pageId);
 }
 async function isLoginSaved() {
     let loginDetails = (await browser.storage.local.get('loginDetails')).loginDetails;
@@ -35,6 +59,7 @@ async function onVisitLogoutPage(details) {
     if (await isLoginSaved()) {
         await deleteCredentials();
     }
+    authenticationPausedTabs.clear();
 }
 
 function setNavigationIncomplete(incomplete) {
@@ -44,6 +69,6 @@ function setNavigationIncomplete(incomplete) {
 browser.webRequest.onResponseStarted.addListener(onVisitLogoutPage, {
     urls: [logoutUrlFilter]
 });
+browser.tabs.onRemoved.addListener((tabId, _) => loginUtils.clearPausedSites(tabId));
 
-module.exports = { isLoginSaved, deleteCredentials, saveLogin, shouldAutoLogin, 
-    setNavigationIncomplete }
+module.exports = { setAuthenticationPaused, clearPausedSites, isLoginSaved, deleteCredentials, saveLogin, shouldAutoLogin, setNavigationIncomplete }

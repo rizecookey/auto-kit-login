@@ -131,7 +131,8 @@ function redirectBack() {
         auth: {
             redirect: {
                 url: redirectTo
-            }
+            },
+            pageDetailsId: pageDetailsId
         }
     });
 }
