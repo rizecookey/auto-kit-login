@@ -1,6 +1,6 @@
 const browser = require('webextension-polyfill');
-const configLoader = require('../config');
-const userConfigManager = require('../user_config');
+const configLoader = require('../common/config');
+const userConfigManager = require('../common/user_config');
 
 const config = configLoader.getConfig();
 
@@ -69,6 +69,6 @@ function setNavigationIncomplete(incomplete) {
 browser.webRequest.onResponseStarted.addListener(onVisitLogoutPage, {
     urls: [logoutUrlFilter]
 });
-browser.tabs.onRemoved.addListener((tabId, _) => loginUtils.clearPausedSites(tabId));
+browser.tabs.onRemoved.addListener((tabId, _) => clearPausedSites(tabId));
 
 module.exports = { setAuthenticationPaused, clearPausedSites, isLoginSaved, deleteCredentials, saveLogin, shouldAutoLogin, setNavigationIncomplete }

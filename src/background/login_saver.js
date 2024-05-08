@@ -1,6 +1,6 @@
 const browser = require('webextension-polyfill');
 const loginUtils = require('./login_utils');
-const configLoader = require('../config');
+const configLoader = require('../common/config');
 const { browserType } = require('./browser_type');
 
 const AUTH_FORM_COMPLETE_OPTS = browserType === 'chromium' ? ['responseHeaders', 'extraHeaders'] : ['responseHeaders'];

@@ -1,8 +1,8 @@
 const browser = require('webextension-polyfill');
-const { InvalidLoginError } = require('../error_types');
+const { InvalidLoginError } = require('../common/error_types');
 
-const configLoader = require('../config');
-const userConfigManager = require('../user_config');
+const configLoader = require('../common/config');
+const userConfigManager = require('../common/user_config');
 const { getAuthenticator } = require('./authenticators');
 
 const config = configLoader.getConfig();
@@ -54,11 +54,11 @@ async function setup() {
     let originalPageUrlSpan = document.getElementById('orig_page_url');
     originalPageUrlSpan.innerText = new URL(loginPage).hostname;
     errorDiv = document.getElementById('login_error');
-    document.getElementById('retry').onclick = function() {
+    document.getElementById('retry').onclick = function () {
         location.reload();
         return true;
     };
-    document.getElementById('return').onclick = async function() {
+    document.getElementById('return').onclick = async function () {
         let newUserConfig = {
             autologinPages: {}
         };
@@ -69,50 +69,37 @@ async function setup() {
     };
 }
 
-const tagsToReplace = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;'
-};
-
-function replaceTag(tag) {
-    return tagsToReplace[tag] || tag;
-}
-
-function safeTagsReplace(str) {
-    if (!str) {
-        return str;
-    }
-    return `${str}`.replace(/[&<>]/g, replaceTag);
-}
-
 function overwriteConsole() {
     let oldLog = console.log;
     let oldError = console.error;
-    console.log = function() {
+    console.log = function () {
         printToLog(arguments, false);
         oldLog(...arguments);
     }
-    console.error = function() {
+    console.error = function () {
         printToLog(arguments, true);
         oldError(...arguments);
     }
 }
 
 function printToLog(arguments, error) {
-    let prefix = error ? '<span style="color:lightcoral">' : '';
-    let suffix = (error ? '</span>' : '') + '<br/>'
     for (const element of arguments) {
-        if (typeof element == 'object') {
-            if (element instanceof Error) {
-                printToLog([element.stack], error);
-                return;
-            } else {
-                logger.innerHTML += prefix + safeTagsReplace(JSON.stringify(element, undefined, 2)) + suffix;
-            }
-        } else {
-            logger.innerHTML += prefix + safeTagsReplace(element) + suffix;
+        if (element instanceof Error) {
+            printToLog([element.stack], error);
+            return;
         }
+
+        const newLine = document.createElement('span');
+        if (error) {
+            newLine.style.color = 'lightcoral';
+        }
+        if (typeof element == 'object') {
+            newLine.innerText = JSON.stringify(element, undefined, 2);
+        } else {
+            newLine.innerText = element;
+        }
+        logger.appendChild(newLine);
+        logger.appendChild(document.createElement('br'));
     }
 }
 

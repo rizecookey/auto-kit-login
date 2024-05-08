@@ -1,4 +1,4 @@
-const { InvalidLoginError } = require('../error_types');
+const { InvalidLoginError } = require('../common/error_types');
 
 const domParser = new DOMParser();
 

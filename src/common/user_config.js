@@ -8,6 +8,7 @@ const defaultUserConfig = getDefaultUserConfig();
 function getDefaultUserConfig() {
     let userConfig = {
         enabled: true,
+        savePassword: false,
         autologinPages: {}
     };
 
