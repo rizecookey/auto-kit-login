@@ -40,7 +40,7 @@ const config = {
             name: 'KIT Campus Plus',
             hostname: 'plus.campus.kit.edu',
             loginPage: 'https://plus.campus.kit.edu/api/user/oidc-login',
-            authenticator: 'oidc',
+            authenticator: 'default',
             loginDetector: {
                 type: 'cookie',
                 options: {
@@ -52,7 +52,7 @@ const config = {
             name: 'KIT WiWi-Portal',
             hostname: 'portal.wiwi.kit.edu',
             loginPage: 'https://portal.wiwi.kit.edu/Account/LoginOpenIdConnect',
-            authenticator: 'oidc',
+            authenticator: 'default',
             loginDetector: {
                 type: 'cookie',
                 options: {

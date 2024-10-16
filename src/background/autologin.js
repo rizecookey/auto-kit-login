@@ -78,10 +78,6 @@ async function onAuthRequest(sender, data) {
 
 async function onAuthError(error) {
     console.log(`authenticator tab reported error: ${error.message}`);
-
-    if (error.deleteLogin) {
-        await loginUtils.deleteCredentials();
-    }
 }
 
 async function runAuthRedirect(tabId, authRedirectData, pageDetailsId) {

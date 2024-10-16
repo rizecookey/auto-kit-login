@@ -34,31 +34,10 @@ function clearPausedSites(tabId) {
 
 async function shouldAutoLogin(tabId, pageId) {
     let userConfig = await userConfigManager.get();
-    return userConfig.enabled && userConfig.autologinPages[pageId] && !navigationIncomplete && await isLoginSaved() && !isAuthenticationPaused(tabId, pageId);
-}
-async function isLoginSaved() {
-    let loginDetails = (await browser.storage.local.get('loginDetails')).loginDetails;
-    return loginDetails?.username && loginDetails.password;
-}
-
-async function deleteCredentials() {
-    await browser.storage.local.remove('loginDetails');
-    console.log('deleting login for currently logged in user');
-}
-
-async function saveLogin(username, password) {
-    await browser.storage.local.set({
-        loginDetails: {
-            username: username,
-            password: password
-        }
-    });
+    return userConfig.enabled && userConfig.autologinPages[pageId] && !navigationIncomplete && !isAuthenticationPaused(tabId, pageId);
 }
 
 async function onVisitLogoutPage(details) {
-    if (await isLoginSaved()) {
-        await deleteCredentials();
-    }
     authenticationPausedTabs.clear();
 }
 
@@ -71,4 +50,4 @@ browser.webRequest.onResponseStarted.addListener(onVisitLogoutPage, {
 });
 browser.tabs.onRemoved.addListener((tabId, _) => loginUtils.clearPausedSites(tabId));
 
-module.exports = { setAuthenticationPaused, clearPausedSites, isLoginSaved, deleteCredentials, saveLogin, shouldAutoLogin, setNavigationIncomplete }
+module.exports = { setAuthenticationPaused, clearPausedSites, shouldAutoLogin, setNavigationIncomplete }

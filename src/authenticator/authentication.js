@@ -13,13 +13,11 @@ let pageDetailsId;
 let loginPage;
 let authenticatorType;
 let redirectTo;
-let loginDetails;
 
 let errorDiv;
 
 async function start() {
     await setup();
-    console.log('current user: ' + loginDetails.username);
     try {
         await makeLoginRequest(loginPage);
     } catch (error) {
@@ -28,8 +26,7 @@ async function start() {
             auth: {
                 error: {
                     message: error.message,
-                    stack: error.stack,
-                    deleteLogin: error instanceof InvalidLoginError
+                    stack: error.stack
                 }
             }
         });
@@ -49,7 +46,6 @@ async function setup() {
     loginPage = pageDetails.loginPage;
     authenticatorType = pageDetails.authenticator;
     redirectTo = url.searchParams.get(pageParameters.redirect);
-    loginDetails = await fetchLoginDetails();
 
     let originalPageUrlSpan = document.getElementById('orig_page_url');
     originalPageUrlSpan.innerText = new URL(loginPage).hostname;
@@ -118,10 +114,10 @@ function printToLog(arguments, error) {
 
 async function makeLoginRequest(pageUrl) {
     let authenticator = getAuthenticator(authenticatorType, pageDetailsId);
-    let successful = await authenticator.authenticate(loginDetails.username, loginDetails.password, pageUrl);
+    let successful = await authenticator.authenticate(pageUrl);
 
     if (successful) {
-        console.log('logged in as: ' + loginDetails.username);
+        console.log('logged in, redirecting back');
     }
     redirectBack();
 }
@@ -135,10 +131,6 @@ function redirectBack() {
             pageDetailsId: pageDetailsId
         }
     });
-}
-
-async function fetchLoginDetails() {
-    return (await browser.storage.local.get('loginDetails')).loginDetails;
 }
 
 start();
