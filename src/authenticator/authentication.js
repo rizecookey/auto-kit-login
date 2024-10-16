@@ -5,6 +5,8 @@ const configLoader = require('../config');
 const userConfigManager = require('../user_config');
 const { getAuthenticator } = require('./authenticators');
 
+const { browserType } = require('../background/browser_type');
+
 const config = configLoader.getConfig();
 const pageParameters = config.extension.pageParameters;
 
@@ -101,7 +103,7 @@ function printToLog(arguments, error) {
     for (const element of arguments) {
         if (typeof element == 'object') {
             if (element instanceof Error) {
-                printToLog([element.stack], error);
+                printToLog([getErrorMessage(element)], error);
                 return;
             } else {
                 logger.innerHTML += prefix + safeTagsReplace(JSON.stringify(element, undefined, 2)) + suffix;
@@ -110,6 +112,14 @@ function printToLog(arguments, error) {
             logger.innerHTML += prefix + safeTagsReplace(element) + suffix;
         }
     }
+}
+
+function getErrorMessage(error) {
+    if (browserType === 'firefox') {
+        return `${error.name}: ${error.message}\n  ${error.stack.replaceAll(/\n/gm, "\n  ")}`
+    }
+
+    return error.toString();
 }
 
 async function makeLoginRequest(pageUrl) {
