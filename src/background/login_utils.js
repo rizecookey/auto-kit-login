@@ -48,6 +48,6 @@ function setNavigationIncomplete(incomplete) {
 browser.webRequest.onResponseStarted.addListener(onVisitLogoutPage, {
     urls: [logoutUrlFilter]
 });
-browser.tabs.onRemoved.addListener((tabId, _) => loginUtils.clearPausedSites(tabId));
+browser.tabs.onRemoved.addListener((tabId, _) => clearPausedSites(tabId));
 
 module.exports = { setAuthenticationPaused, clearPausedSites, shouldAutoLogin, setNavigationIncomplete }

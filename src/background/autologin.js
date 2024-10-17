@@ -10,7 +10,14 @@ const autologinPageFilters = configLoader.getAutologinPageFilters();
 const pageParameters = config.extension.pageParameters;
 
 async function onVisitAuthenticatablePage(details) {
-    let domain = new URL(details.url).hostname;
+    let tab = await browser.tabs.get(details.tabId);
+    let window = await browser.windows.get(tab.windowId);
+    if (window.type === 'popup') {
+        return;
+    }
+
+    let url = new URL(details.url);
+    let domain = url.hostname;
     let pageDetailsId = findMatchingPageDetailsId(domain);
     if (!pageDetailsId || !await loginUtils.shouldAutoLogin(details.tabId, pageDetailsId)) {
         return;
