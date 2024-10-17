@@ -40,7 +40,8 @@ class DefaultAuthenticator {
         let isLoggedIn = false;
         return new Promise((resolve, reject) => {
             async function onNavigateInPopup(details) {
-                if (details.windowId != popup.id) {
+                let windowId = (await browser.tabs.get(details.tabId)).windowId;
+                if (windowId != popup.id) {
                     return;
                 }
 

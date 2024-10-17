@@ -114,11 +114,11 @@ function printToLog(arguments, error) {
 }
 
 function getErrorMessage(error) {
-    if (browserType === 'firefox') {
-        return `${error.name}: ${error.message}\n  ${error.stack.replaceAll(/\n/gm, "\n  ")}`
+    switch (browserType) {
+        case 'firefox': return `${error.name}: ${error.message}\n  ${error.stack.replaceAll(/\n/gm, "\n  ")}`;
+        case 'chromium': return error.stack;
+        default: return error.toString();
     }
-
-    return error.toString();
 }
 
 async function makeLoginRequest(pageUrl) {
