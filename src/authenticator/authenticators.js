@@ -1,6 +1,6 @@
 const browser = require('webextension-polyfill');
-const { getConfig } = require('../config');
-const { InvalidLoginError } = require('../error_types');
+const { getConfig } = require('../common/config');
+const { getLoginDetector } = require('../common/login_detectors');
 
 class DefaultAuthenticator {
     #name;
@@ -20,9 +20,8 @@ class DefaultAuthenticator {
     }
 
     async authenticate(pageUrl) {
-        let moddedUrl = new URL(pageUrl);
         console.log("opening login popup");
-        let popup = await browser.windows.create({ type: 'popup', height: 600, width: 500, url: moddedUrl.toString() });
+        let popup = await browser.windows.create({ type: 'popup', height: 600, width: 500, url: pageUrl });
         console.log("waiting for authentication");
 
         return await this.waitForAuthentication(popup);
@@ -30,24 +29,37 @@ class DefaultAuthenticator {
 
     waitForAuthentication(popup) {
         let authenticator = this;
+        let isLoggedIn = false;
         return new Promise((resolve, reject) => {
-            function onNavigateInPopup(details) {
-                let originalHostname = getConfig().pages[authenticator.#pageId].hostname;
-                let currentHostname = new URL(details.url).hostname;
-                if (details.windowId == popup.id && originalHostname === currentHostname) {
-                    console.log("window seems to have completed authentication");
-                    browser.webNavigation.onBeforeNavigate.removeListener(onNavigateInPopup);
-                    browser.windows.onRemoved.removeListener(onWindowClosed);
-                    browser.windows.remove(popup.id);
-                    resolve(true);
+            async function onNavigateInPopup(details) {
+                if (details.windowId != popup.id) {
+                    return;
                 }
+
+                let pageConfig = getConfig().pages[authenticator.#pageId];
+                let loginDetectorConfig = pageConfig.loginDetector;
+                let loginDetector = getLoginDetector(loginDetectorConfig);
+                if (!(await loginDetector.isLoggedIn(pageConfig.hostname))) {
+                    return;
+                }
+
+                console.log("window seems to have completed authentication");
+                isLoggedIn = true;
+                browser.windows.remove(popup.id);
+                resolve(true);
             }
 
-            function onWindowClosed(windowId) {
-                if (windowId === popup.id) {
-                    browser.webNavigation.onBeforeNavigate.removeListener(onNavigateInPopup);
-                    browser.windows.onRemoved.removeListener(onWindowClosed);
-                    reject(new Error("login window was closed without successfull authentication"));
+            async function onWindowClosed(windowId) {
+                if (windowId != popup.id) {
+                    return;
+                }
+
+                console.log("popup closed, removing listeners");
+                browser.webNavigation.onBeforeNavigate.removeListener(onNavigateInPopup);
+                browser.windows.onRemoved.removeListener(onWindowClosed);
+                
+                if (!isLoggedIn) {
+                    reject(new Error("login window was closed without successful authentication"));
                 }
             }
 

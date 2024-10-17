@@ -1,11 +1,10 @@
 const browser = require('webextension-polyfill');
-const { InvalidLoginError } = require('../error_types');
 
-const configLoader = require('../config');
-const userConfigManager = require('../user_config');
+const configLoader = require('../common/config');
+const userConfigManager = require('../common/user_config');
 const { getAuthenticator } = require('./authenticators');
 
-const { browserType } = require('../browser_type');
+const { browserType } = require('../common/browser_type');
 
 const config = configLoader.getConfig();
 const pageParameters = config.extension.pageParameters;

@@ -1,7 +1,7 @@
 const browser = require('webextension-polyfill');
 const loginUtils = require('./login_utils')
-const { getLoginDetector } = require('./login_detectors');
-const configLoader = require('../config');
+const { getLoginDetector } = require('../common/login_detectors');
+const configLoader = require('../common/config');
 
 const config = configLoader.getConfig();
 const idpUrl = config.idpUrl;

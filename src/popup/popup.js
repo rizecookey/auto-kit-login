@@ -1,5 +1,5 @@
-const configLoader = require('../config');
-const userConfigManager = require('../user_config');
+const configLoader = require('../common/config');
+const userConfigManager = require('../common/user_config');
 
 const config = configLoader.getConfig();
 

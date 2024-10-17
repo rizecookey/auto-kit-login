@@ -1,5 +1,5 @@
 const autoLogin = require('./autologin')
-const { browserType } = require('../browser_type')
+const { browserType } = require('../common/browser_type')
 
 console.log('background script initialized');
 console.log(`platform: ${browserType}`);
