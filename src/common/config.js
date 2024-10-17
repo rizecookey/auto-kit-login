@@ -51,7 +51,7 @@ const config = {
         'wiwi-portal': {
             name: 'KIT WiWi-Portal',
             hostname: 'portal.wiwi.kit.edu',
-            loginPage: 'https://portal.wiwi.kit.edu/Account/LoginOpenIdConnect',
+            loginPage: 'https://portal.wiwi.kit.edu/api/account/login-oidc',
             authenticator: 'default',
             loginDetector: {
                 type: 'cookie',
