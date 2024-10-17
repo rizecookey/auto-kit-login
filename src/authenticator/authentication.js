@@ -5,7 +5,7 @@ const configLoader = require('../config');
 const userConfigManager = require('../user_config');
 const { getAuthenticator } = require('./authenticators');
 
-const { browserType } = require('../background/browser_type');
+const { browserType } = require('../browser_type');
 
 const config = configLoader.getConfig();
 const pageParameters = config.extension.pageParameters;
