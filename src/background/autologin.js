@@ -10,6 +10,9 @@ const autologinPageFilters = configLoader.getAutologinPageFilters();
 const pageParameters = config.extension.pageParameters;
 
 async function onVisitAuthenticatablePage(details) {
+    if (details.documentLifecycle == 'prerender') {
+        return;
+    }
     let tab = await browser.tabs.get(details.tabId);
     let window = await browser.windows.get(tab.windowId);
     if (window.type === 'popup') {
