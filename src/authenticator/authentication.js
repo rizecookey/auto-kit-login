@@ -1,10 +1,10 @@
-const browser = require('webextension-polyfill');
+import browser from 'webextension-polyfill'
 
-const configLoader = require('../common/config');
-const userConfigManager = require('../common/user_config');
-const { getAuthenticator } = require('./authenticators');
+import * as configLoader from '../common/config';
+import * as userConfigManager from '../common/user_config';
+import { getAuthenticator } from './authenticators';
 
-const { browserType } = require('../common/browser_type');
+import { browserType } from '../common/browser_type';
 
 const config = configLoader.getConfig();
 const pageParameters = config.extension.pageParameters;
@@ -96,10 +96,10 @@ function overwriteConsole() {
     }
 }
 
-function printToLog(arguments, error) {
+function printToLog(argumentsArray, error) {
     let prefix = error ? '<span style="color:lightcoral">' : '';
     let suffix = (error ? '</span>' : '') + '<br/>'
-    for (const element of arguments) {
+    for (const element of argumentsArray) {
         if (typeof element == 'object') {
             if (element instanceof Error) {
                 printToLog([getErrorMessage(element)], error);

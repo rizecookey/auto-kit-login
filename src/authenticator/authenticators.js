@@ -1,6 +1,6 @@
-const browser = require('webextension-polyfill');
-const { getConfig } = require('../common/config');
-const { getLoginDetector } = require('../common/login_detectors');
+import browser from 'webextension-polyfill';
+import { getConfig } from '../common/config'
+import { getLoginDetector } from '../common/login_detectors';
 
 const domParser = new DOMParser();
 
@@ -205,6 +205,4 @@ function getAuthenticator(type, pageId) {
     }
 }
 
-module.exports = {
-    getAuthenticator
-}
+export { getAuthenticator }

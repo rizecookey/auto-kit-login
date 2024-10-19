@@ -1,4 +1,4 @@
-const browser = require('webextension-polyfill');
+import browser from 'webextension-polyfill';
 
 class LoginDetector {
     #options;
@@ -55,4 +55,4 @@ function getLoginDetector(config) {
     }
 }
 
-module.exports = { getLoginDetector }
+export { getLoginDetector }

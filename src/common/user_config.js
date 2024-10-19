@@ -1,5 +1,5 @@
-const browser = require('webextension-polyfill');
-const configLoader = require('./config');
+import browser from 'webextension-polyfill';
+import * as configLoader from './config';
 
 const config = configLoader.getConfig();
 
@@ -49,4 +49,4 @@ function mergeRecursive(...objects) {
     return merged;
 }
 
-module.exports = { get, set }
+export { get, set }

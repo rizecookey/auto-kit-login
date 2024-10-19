@@ -1,1 +1,2 @@
-module.exports = { browserType: 'chromium' }
+const browserType = 'chromium'
+export { browserType }

@@ -1,23 +1,24 @@
 {
-  "dependencies": {
-    "browserify": "^17.0.0"
-  },
   "name": "auto-kit-login",
   "version": "1.0.0-dev",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm install && node build.js"
+    "build": "npm run build:release",
+    "build:release": "npm install && node build.js release",
+    "build:debug": "npm install && node build.js debug"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rizecookey/auto-kit-login.git"
   },
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "Automatic Shibboleth login on KIT pages.",
   "devDependencies": {
+    "esbuild": "0.24.0",
     "fs-extra": "^11.2.0",
     "webextension-polyfill": "^0.10.0"
   }

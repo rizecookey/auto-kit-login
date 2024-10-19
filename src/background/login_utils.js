@@ -1,6 +1,6 @@
-const browser = require('webextension-polyfill');
-const configLoader = require('../common/config');
-const userConfigManager = require('../common/user_config');
+import browser from 'webextension-polyfill';
+import * as configLoader from '../common/config';
+import * as userConfigManager from '../common/user_config';
 
 const config = configLoader.getConfig();
 
@@ -14,7 +14,7 @@ function isAuthenticationPaused(tabId, pageDetailsId) {
 }
 
 function setAuthenticationPaused(tabId, pageDetailsId, value) {
-    const pausedIds = authenticationPausedTabs.get(tabId) || [];
+    let pausedIds = authenticationPausedTabs.get(tabId) || [];
     if (value && !pausedIds.includes(pageDetailsId)) {
         pausedIds.push(pageDetailsId);
     } else if (!value && pausedIds.includes(pageDetailsId)) {
@@ -50,4 +50,4 @@ browser.webRequest.onResponseStarted.addListener(onVisitLogoutPage, {
 });
 browser.tabs.onRemoved.addListener((tabId, _) => clearPausedSites(tabId));
 
-module.exports = { setAuthenticationPaused, clearPausedSites, shouldAutoLogin, setNavigationIncomplete }
+export { setAuthenticationPaused, clearPausedSites, shouldAutoLogin, setNavigationIncomplete }

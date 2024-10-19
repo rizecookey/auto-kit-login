@@ -1,7 +1,7 @@
-const browser = require('webextension-polyfill');
-const loginUtils = require('./login_utils')
-const { getLoginDetector } = require('../common/login_detectors');
-const configLoader = require('../common/config');
+import browser from 'webextension-polyfill'
+import * as loginUtils from './login_utils'
+import { getLoginDetector } from '../common/login_detectors';
+import * as configLoader from '../common/config';
 
 const config = configLoader.getConfig();
 const idpUrl = config.idpUrl;
@@ -112,4 +112,4 @@ function registerListeners() {
     });
 }
 
-module.exports = { registerListeners }
+export { registerListeners }

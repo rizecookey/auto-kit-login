@@ -102,4 +102,4 @@ function getAutologinPageFilters() {
     return filters;
 }
 
-module.exports = { getConfig, getAutologinPageFilters }
+export { getConfig, getAutologinPageFilters }

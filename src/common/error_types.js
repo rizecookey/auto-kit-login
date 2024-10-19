@@ -4,4 +4,4 @@ class InvalidLoginError extends Error {
     }
 }
 
-module.exports = { InvalidLoginError };
+export { InvalidLoginError };

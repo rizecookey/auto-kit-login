@@ -1,1 +1,2 @@
-module.exports = { browserType: 'firefox' }
+const browserType = 'firefox'
+export { browserType }

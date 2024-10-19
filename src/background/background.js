@@ -1,5 +1,5 @@
-const autoLogin = require('./autologin')
-const { browserType } = require('../common/browser_type')
+import * as autoLogin from './autologin';
+import { browserType } from '../common/browser_type';
 
 console.log('background script initialized');
 console.log(`platform: ${browserType}`);
