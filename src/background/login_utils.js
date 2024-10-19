@@ -6,7 +6,6 @@ const config = configLoader.getConfig();
 
 const logoutUrlFilter = config.filters.logout;
 
-let navigationIncomplete = false;
 const authenticationPausedTabs = new Map();
 
 function isAuthenticationPaused(tabId, pageDetailsId) {
@@ -34,15 +33,11 @@ function clearPausedSites(tabId) {
 
 async function shouldAutoLogin(tabId, pageId) {
     let userConfig = await userConfigManager.get();
-    return userConfig.enabled && userConfig.autologinPages[pageId] && !navigationIncomplete && !isAuthenticationPaused(tabId, pageId);
+    return userConfig.enabled && userConfig.autologinPages[pageId] && !isAuthenticationPaused(tabId, pageId);
 }
 
 async function onVisitLogoutPage(details) {
     authenticationPausedTabs.clear();
-}
-
-function setNavigationIncomplete(incomplete) {
-    navigationIncomplete = incomplete;
 }
 
 browser.webRequest.onResponseStarted.addListener(onVisitLogoutPage, {
@@ -50,4 +45,4 @@ browser.webRequest.onResponseStarted.addListener(onVisitLogoutPage, {
 });
 browser.tabs.onRemoved.addListener((tabId, _) => clearPausedSites(tabId));
 
-export { setAuthenticationPaused, clearPausedSites, shouldAutoLogin, setNavigationIncomplete }
+export { setAuthenticationPaused, clearPausedSites, shouldAutoLogin }
