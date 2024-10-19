@@ -13,10 +13,10 @@
     "url": "git+https://github.com/rizecookey/auto-kit-login.git"
   },
   "type": "module",
-  "keywords": [],
-  "author": "",
+  "keywords": ["extension", "webextension", "autologin", "kit", "karlsruher institut für technologie", "karlsruhe institute of technology"],
+  "author": "rizecookey",
   "license": "ISC",
-  "description": "Automatic Shibboleth login on KIT pages.",
+  "description": "Automatic login redirection on supported KIT pages.",
   "devDependencies": {
     "esbuild": "0.24.0",
     "fs-extra": "^11.2.0",
