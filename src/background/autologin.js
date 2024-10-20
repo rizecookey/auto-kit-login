@@ -101,9 +101,13 @@ async function runAuthRedirect(tabId, authRedirectData, pageDetailsId) {
 }
 
 function registerListeners() {
-    browser.webNavigation.onBeforeNavigate.addListener(onVisitAuthenticatablePage, {
-        url: autologinPageFilters
-    });
+    // ensure visit listeners are always fully executed one after another
+    let activeVisitListenersPerTab = new Map();
+    browser.webNavigation.onBeforeNavigate.addListener(details => {
+        let activePromise = activeVisitListenersPerTab.get(details.tabId) || Promise.resolve();
+        activeVisitListenersPerTab.set(details.tabId, activePromise.then(() => onVisitAuthenticatablePage(details)));
+    }, { url: autologinPageFilters });
+    browser.tabs.onRemoved.addListener(tabId => activeVisitListenersPerTab.delete(tabId));
 
     browser.runtime.onMessage.addListener(async (request, sender) => {
         if (request.auth) {
