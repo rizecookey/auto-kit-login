@@ -1,47 +1,45 @@
 import browser from 'webextension-polyfill';
-import { getConfig } from '../common/config'
+import { WebNavigation, Windows } from 'webextension-polyfill';
+import { getConfig, AuthenticatorType } from '../common/config'
 import { getLoginDetector } from '../common/login_detectors';
 
 const domParser = new DOMParser();
 
-const loginFormPostHeaders = {
-    postHeaders: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-    }
+const loginFormPostHeaders: HeadersInit = {
+    'Content-Type': 'application/x-www-form-urlencoded'
 }
 
-class DefaultAuthenticator {
-    #name;
-    #pageId;
+interface Authenticator {
+    getPageId(): string;
+    authenticate(pageUrl: URL): Promise<void>;
+}
 
-    constructor(name, pageId) {
-        this.#name = name;
+class DefaultAuthenticator implements Authenticator {
+    #pageId: string;
+
+    constructor(pageId: string) {
         this.#pageId = pageId;
     }
 
-    getName() {
-        return this.#name;
-    }
-
-    getPageId() {
+    getPageId(): string {
         return this.#pageId;
     }
 
-    async authenticate(pageUrl) {
+    async authenticate(pageUrl: URL): Promise<void> {
         console.log("opening login popup");
-        let popup = await browser.windows.create({ type: 'popup', height: 600, width: 500, url: pageUrl });
+        let popup = await browser.windows.create({ type: 'popup', height: 600, width: 500, url: pageUrl.toString() });
         console.log("waiting for authentication");
 
         return await this.waitForAuthentication(popup);
     }
 
-    waitForAuthentication(popup) {
+    waitForAuthentication(popup: Windows.Window): Promise<void> {
         let authenticator = this;
         let isLoggedIn = false;
-        return new Promise((resolve, reject) => {
-            async function onNavigateInPopup(details) {
+        return new Promise<void>((resolve, reject) => {
+            async function onNavigateInPopup(details: WebNavigation.OnCommittedDetailsType) {
                 let windowId = (await browser.tabs.get(details.tabId)).windowId;
-                if (windowId != popup.id) {
+                if (popup.id == null || windowId != popup.id) {
                     return;
                 }
 
@@ -55,16 +53,16 @@ class DefaultAuthenticator {
                 console.log("window seems to have completed authentication");
                 isLoggedIn = true;
                 browser.windows.remove(popup.id);
-                resolve(true);
+                resolve();
             }
 
-            async function onWindowClosed(windowId) {
+            async function onWindowClosed(windowId: number) {
                 if (windowId != popup.id) {
                     return;
                 }
 
                 console.log("popup closed, removing listeners");
-                browser.webNavigation.onBeforeNavigate.removeListener(onNavigateInPopup);
+                browser.webNavigation.onCommitted.removeListener(onNavigateInPopup);
                 browser.windows.onRemoved.removeListener(onWindowClosed);
                 
                 if (!isLoggedIn) {
@@ -78,8 +76,8 @@ class DefaultAuthenticator {
     }
 }
 
-class FELSAuthenticator extends DefaultAuthenticator {
-    static LOGIN_PAGE = "https://fels.scc.kit.edu/Shibboleth.sso/Login";
+class FELSAuthenticator extends DefaultAuthenticator implements Authenticator {
+    static LOGIN_PAGE: URL = new URL("https://fels.scc.kit.edu/Shibboleth.sso/Login");
     static FELS_FORM_SELECT_KIT = {
         'jakarta.faces.partial.ajax': 'true',
         'jakarta.faces.source': 'searchAutocompl',
@@ -104,10 +102,10 @@ class FELSAuthenticator extends DefaultAuthenticator {
 
     static VIEWSTATE_FIELD = "jakarta.faces.ViewState";
 
-    async authenticate(pageUrl) {
+    async authenticate(pageUrl: URL): Promise<void> {
         let signInPageResponse = await this.initiateAuthentication(pageUrl);
         if (signInPageResponse.ok && new URL(signInPageResponse.url).hostname != new URL(FELSAuthenticator.LOGIN_PAGE).hostname) {
-            return signInPageResponse;
+            return;
         }
 
         await this.selectKITOnFELSPage(signInPageResponse);
@@ -115,7 +113,7 @@ class FELSAuthenticator extends DefaultAuthenticator {
         return await super.authenticate(FELSAuthenticator.LOGIN_PAGE);
     }
 
-    async initiateAuthentication(pageUrl) {
+    async initiateAuthentication(pageUrl: URL): Promise<Response> {
         console.log(`loading login page from ${pageUrl}`);
         let pageLoadResponse = await fetch(pageUrl, {
             method: 'GET'
@@ -126,7 +124,7 @@ class FELSAuthenticator extends DefaultAuthenticator {
         return await this.autoSubmitForm(pageUrl, document);
     }
 
-    async selectKITOnFELSPage(response) {
+    async selectKITOnFELSPage(response: Response): Promise<Response> {
         console.log(`selecting KIT on ${response.url}`);
 
         let doc = await parseResponseToDoc(response);
@@ -150,25 +148,28 @@ class FELSAuthenticator extends DefaultAuthenticator {
         });
     }
 
-    fillFELSSelectionForm(doc, defaults) {
+    fillFELSSelectionForm(doc: Document, defaults: {[key: string]: string}): URLSearchParams {
         let formData = new URLSearchParams();
 
         for (let fieldName in defaults) {
             formData.append(fieldName, defaults[fieldName]);
         }
 
-        let viewState = doc.querySelector(`input[name="${FELSAuthenticator.VIEWSTATE_FIELD}"]`);
+        let viewState = doc.querySelector<HTMLInputElement>(`input[name="${FELSAuthenticator.VIEWSTATE_FIELD}"]`);
+        if (!viewState) {
+            throw new Error('could not find necessary viewstate field');
+        }
         formData.append(FELSAuthenticator.VIEWSTATE_FIELD, viewState.value);
 
         return formData;
     }
 
-    async autoSubmitForm(originalUrl, doc) {
+    async autoSubmitForm(originalUrl: URL, doc: Document): Promise<Response> {
         let form = doc.forms[0];
 
         let formData = this.scrapePresetFormDetails(doc, 0);
         let responseURL = new URL(originalUrl);
-        let url = new URL(form.getAttribute('action'), responseURL.origin + responseURL.pathname).toString();
+        let url = new URL(form.getAttribute('action')!!, responseURL.origin + responseURL.pathname);
 
         console.log(`auto-submitting form from ${originalUrl} to ${url}`);
         return await fetch(url, {
@@ -178,13 +179,16 @@ class FELSAuthenticator extends DefaultAuthenticator {
         });
     }
 
-    scrapePresetFormDetails(doc, formId) {
+    scrapePresetFormDetails(doc: Document, formId: number): URLSearchParams {
         let formData = new URLSearchParams();
 
         let form = doc.forms[formId];
         let elementsCollection = form.getElementsByTagName('input');
         for (let i = 0; i < elementsCollection.length; i++) {
             let element = elementsCollection.item(i);
+            if (element == null) {
+                continue;
+            }
             formData.append(element.name, element.value);
         }
 
@@ -192,16 +196,16 @@ class FELSAuthenticator extends DefaultAuthenticator {
     }
 }
 
-async function parseResponseToDoc(response) {
+async function parseResponseToDoc(response: Response): Promise<Document> {
     return domParser.parseFromString(await response.text(), 'text/html');
 }
 
-function getAuthenticator(type, pageId) {
+function getAuthenticator(type: AuthenticatorType, pageId: string): Authenticator {
     switch (type) {
         case 'fels':
-            return new FELSAuthenticator(type, pageId);
+            return new FELSAuthenticator(pageId);
         default:
-            return new DefaultAuthenticator(type, pageId);
+            return new DefaultAuthenticator(pageId);
     }
 }
 

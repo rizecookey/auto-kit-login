@@ -1,7 +1,9 @@
 import browser from 'webextension-polyfill'
+import { WebNavigation } from 'webextension-polyfill';
 import * as loginUtils from './login_utils'
 import { getLoginDetector } from '../common/login_detectors';
 import * as configLoader from '../common/config';
+import { PageConfig } from '../common/config';
 
 const config = configLoader.getConfig();
 const idpUrl = config.idpUrl;
@@ -9,11 +11,14 @@ const autologinPageFilters = configLoader.getAutologinPageFilters();
 
 const pageParameters = config.extension.pageParameters;
 
-async function onVisitAuthenticatablePage(details) {
+async function onVisitAuthenticatablePage(details: WebNavigation.OnBeforeNavigateDetailsType & { documentLifecycle?: string }) {
     if (details.documentLifecycle == 'prerender') {
         return;
     }
     let tab = await browser.tabs.get(details.tabId);
+    if (tab.windowId === undefined) {
+        return;
+    }
     let window = await browser.windows.get(tab.windowId);
     if (window.type === 'popup') {
         return;
@@ -22,6 +27,9 @@ async function onVisitAuthenticatablePage(details) {
     let url = new URL(details.url);
     let domain = url.hostname;
     let pageDetailsId = findMatchingPageDetailsId(domain);
+    if (pageDetailsId === undefined) {
+        return;
+    }
     if (!pageDetailsId || !await loginUtils.shouldAutoLogin(details.tabId, pageDetailsId)) {
         return;
     }
@@ -29,12 +37,12 @@ async function onVisitAuthenticatablePage(details) {
 
     if (!await isLoggedIn(domain, pageDetails)) {
         await clearPreviousCookies();
-        await redirectAndAuthenticate(details.tabId, pageDetailsId, details.url);
+        await redirectAndAuthenticate(details.tabId, pageDetailsId, new URL(details.url));
     }
 }
 
-function findMatchingPageDetailsId(domain) {
-    let pageIdFound;
+function findMatchingPageDetailsId(domain: string): string | undefined {
+    let pageIdFound: string | undefined;
 
     for (let pageId in config.pages) {
         let page = config.pages[pageId];
@@ -46,14 +54,14 @@ function findMatchingPageDetailsId(domain) {
     return pageIdFound;
 }
 
-async function isLoggedIn(domain, pageDetails) {
+async function isLoggedIn(domain: string, pageDetails: PageConfig): Promise<boolean> {
     let loginDetectorConfig = pageDetails.loginDetector;
     let loginDetector = getLoginDetector(loginDetectorConfig);
 
     return await loginDetector.isLoggedIn(domain);
 }
 
-async function clearPreviousCookies() {
+async function clearPreviousCookies(): Promise<void> {
     let cookies = await browser.cookies.getAll({
         url: idpUrl
     });
@@ -65,9 +73,9 @@ async function clearPreviousCookies() {
     }
 }
 
-async function redirectAndAuthenticate(tabId, pageDetailsId, originalPage) {
+async function redirectAndAuthenticate(tabId: number, pageDetailsId: string, originalPage: URL): Promise<void> {
     let params = new URLSearchParams();
-    params.append(pageParameters.redirect, originalPage);
+    params.append(pageParameters.redirect, originalPage.toString());
     params.append(pageParameters.pageDetailsId, pageDetailsId)
     browser.tabs.update(tabId, {
         url: `authenticator/authenticating.html?${params.toString()}`
@@ -75,8 +83,11 @@ async function redirectAndAuthenticate(tabId, pageDetailsId, originalPage) {
     console.log('starting authentication on tab ' + tabId);
 }
 
-async function onAuthRequest(sender, data) {
+async function onAuthRequest(sender: browser.Runtime.MessageSender, data: any): Promise<void> {
     if (data.redirect) {
+        if (sender.tab?.id === undefined) {
+            return;
+        }
         await runAuthRedirect(sender.tab.id, data.redirect, data.pageDetailsId);
         return;
     }
@@ -86,11 +97,11 @@ async function onAuthRequest(sender, data) {
     }
 }
 
-async function onAuthError(error) {
+async function onAuthError(error: Error) {
     console.log(`authenticator tab reported error: ${error.message}`);
 }
 
-async function runAuthRedirect(tabId, authRedirectData, pageDetailsId) {
+async function runAuthRedirect(tabId: number, authRedirectData: any, pageDetailsId: string) {
     console.log(`redirecting auth tab back to '${authRedirectData.url}'`);
 
     loginUtils.setAuthenticationPaused(tabId, pageDetailsId, true);
@@ -109,7 +120,7 @@ function registerListeners() {
     }, { url: autologinPageFilters });
     browser.tabs.onRemoved.addListener(tabId => activeVisitListenersPerTab.delete(tabId));
 
-    browser.runtime.onMessage.addListener(async (request, sender) => {
+    browser.runtime.onMessage.addListener(async (request: any, sender) => {
         if (request.auth) {
             await onAuthRequest(sender, request.auth);
         }

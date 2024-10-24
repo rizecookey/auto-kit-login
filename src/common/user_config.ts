@@ -6,7 +6,7 @@ const config = configLoader.getConfig();
 const defaultUserConfig = getDefaultUserConfig();
 
 function getDefaultUserConfig() {
-    let userConfig = {
+    let userConfig: any = {
         enabled: true,
         autologinPages: {}
     };
@@ -18,13 +18,13 @@ function getDefaultUserConfig() {
     return userConfig;
 }
 
-async function get() {
+async function get(): Promise<any> {
     let modified = (await browser.storage.local.get('userConfig'))?.userConfig;
 
     return mergeRecursive(defaultUserConfig, modified);
 }
 
-async function set(newUserConfig) {
+async function set(newUserConfig: any) {
     let userConfig = await get();
     let merged = mergeRecursive(defaultUserConfig, userConfig, newUserConfig);
 
@@ -33,8 +33,8 @@ async function set(newUserConfig) {
     });
 }
 
-function mergeRecursive(...objects) {
-    let merged = {};
+function mergeRecursive(...objects: any[]) {
+    let merged: any = {};
 
     for (let object of objects) {
         for (let key in object) {

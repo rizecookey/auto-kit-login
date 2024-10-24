@@ -5,21 +5,30 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run build:release",
-    "build:release": "npm install && node build.js release",
-    "build:debug": "npm install && node build.js debug"
+    "build:release": "npm install && tsc --noemit && node build.js release",
+    "build:debug": "npm install && tsc --noemit && node build.js debug"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/rizecookey/auto-kit-login.git"
   },
   "type": "module",
-  "keywords": ["extension", "webextension", "autologin", "kit", "karlsruher institut für technologie", "karlsruhe institute of technology"],
+  "keywords": [
+    "extension",
+    "webextension",
+    "autologin",
+    "kit",
+    "karlsruher institut für technologie",
+    "karlsruhe institute of technology"
+  ],
   "author": "rizecookey",
   "license": "ISC",
   "description": "Automatic login redirection on supported KIT pages.",
   "devDependencies": {
+    "@types/webextension-polyfill": "^0.12.1",
     "esbuild": "0.24.0",
     "fs-extra": "^11.2.0",
+    "typescript": "^5.6.3",
     "webextension-polyfill": "^0.10.0"
   }
 }

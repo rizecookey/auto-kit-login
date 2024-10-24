@@ -1,17 +1,18 @@
 import * as configLoader from '../common/config';
 import * as userConfigManager from '../common/user_config';
+import { PageConfig } from '../common/config';
 
 const config = configLoader.getConfig();
 
-async function setup() {
+async function setup(): Promise<void> {
     await loadConfigOptions();
 }
 
-async function loadConfigOptions() {
+async function loadConfigOptions(): Promise<void> {
     let table = document.getElementById('page_config');
 
     let userConfig = await userConfigManager.get();
-    let enabledToggle = document.getElementById('enable_autologin');
+    let enabledToggle = document.querySelector<HTMLInputElement>('input[id=enable_autologin]')!!;
     enabledToggle.checked = userConfig.enabled;
     enabledToggle.onchange = async function() {
         userConfigManager.set({
@@ -22,11 +23,11 @@ async function loadConfigOptions() {
     for (let pageId in config.pages) {
         let page = config.pages[pageId];
         let generatedOption = createPageOption(pageId, page, userConfig);
-        table.appendChild(generatedOption);
+        table!!.appendChild(generatedOption);
     }
 }
 
-function createPageOption(pageId, pageDetails, userConfig) {
+function createPageOption(pageId: string, pageDetails: PageConfig, userConfig: any): HTMLDivElement {
     let tableRow = document.createElement('div');
     tableRow.className = 'table_row';
 
@@ -51,8 +52,8 @@ function createPageOption(pageId, pageDetails, userConfig) {
     return tableRow;
 }
 
-async function setPageAutologinEnabled(pageId, enabled) {
-    let newConfig = {
+async function setPageAutologinEnabled(pageId: string, enabled: boolean): Promise<void> {
+    let newConfig: any = {
         autologinPages: {}
     };
 

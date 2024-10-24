@@ -1,4 +1,5 @@
 import browser from 'webextension-polyfill';
+import { WebRequest } from 'webextension-polyfill';
 import * as configLoader from '../common/config';
 import * as userConfigManager from '../common/user_config';
 
@@ -6,13 +7,13 @@ const config = configLoader.getConfig();
 
 const logoutUrlFilter = config.filters.logout;
 
-const authenticationPausedTabs = new Map();
+const authenticationPausedTabs = new Map<number, string[]>();
 
-function isAuthenticationPaused(tabId, pageDetailsId) {
-    return authenticationPausedTabs.has(tabId) && authenticationPausedTabs.get(tabId).includes(pageDetailsId);
+function isAuthenticationPaused(tabId: number, pageDetailsId: string): boolean {
+    return authenticationPausedTabs.has(tabId) && authenticationPausedTabs.get(tabId)?.includes(pageDetailsId) || false;
 }
 
-function setAuthenticationPaused(tabId, pageDetailsId, value) {
+function setAuthenticationPaused(tabId: number, pageDetailsId: string, value: boolean): void {
     let pausedIds = authenticationPausedTabs.get(tabId) || [];
     if (value && !pausedIds.includes(pageDetailsId)) {
         pausedIds.push(pageDetailsId);
@@ -27,16 +28,16 @@ function setAuthenticationPaused(tabId, pageDetailsId, value) {
     }
 }
 
-function clearPausedSites(tabId) {
+function clearPausedSites(tabId: number): void {
     authenticationPausedTabs.delete(tabId);
 }
 
-async function shouldAutoLogin(tabId, pageId) {
+async function shouldAutoLogin(tabId: number, pageId: string): Promise<boolean> {
     let userConfig = await userConfigManager.get();
     return userConfig.enabled && userConfig.autologinPages[pageId] && !isAuthenticationPaused(tabId, pageId);
 }
 
-async function onVisitLogoutPage(details) {
+async function onVisitLogoutPage(details: WebRequest.OnResponseStartedDetailsType): Promise<void> {
     authenticationPausedTabs.clear();
 }
 

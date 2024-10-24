@@ -6,14 +6,16 @@ import { argv } from 'process';
 const PLATFORM_SRC = 'platform_src/';
 const SRC_DIR = 'src/';
 const CACHE_DIR = '.build/';
+const BUILD_SRC_COPY_DIR = '.build/src/'
 const OUT_DIR = 'dist/';
 
 const PLATFORMS = ['chrome', 'firefox'];
-const FINAL_SCRIPTS = [
-    "authenticator/authentication.js",
-    "background/background.js",
-    "popup/popup.js"
-];
+const FINAL_SCRIPTS = {
+    "authenticator/authentication.ts": "authenticator/authentication.js",
+    "background/background.ts": "background/background.js",
+    "popup/popup.ts": "popup/popup.js"
+};
+const NAME_TRANSFORMS = {...FINAL_SCRIPTS};
 
 let mode;
 
@@ -47,10 +49,10 @@ async function build() {
         fs.mkdirSync(CACHE_DIR);
 
         const platformDir = path.resolve(PLATFORM_SRC, platform);
-        fs.copySync(SRC_DIR, CACHE_DIR);
-        fs.copySync(platformDir, CACHE_DIR, { overwrite: true });
-        logBuildStep(`copied src to`, CACHE_DIR);
-        await buildDist(CACHE_DIR, path.join(OUT_DIR, platform), FINAL_SCRIPTS);
+        fs.copySync(SRC_DIR, BUILD_SRC_COPY_DIR);
+        fs.copySync(platformDir, BUILD_SRC_COPY_DIR, { overwrite: true });
+        logBuildStep(`copied src to`, BUILD_SRC_COPY_DIR);
+        await buildDist(BUILD_SRC_COPY_DIR, path.join(OUT_DIR, platform), FINAL_SCRIPTS);
     }
 }
 
@@ -68,7 +70,7 @@ async function buildDist(srcDir, outDir, finalScripts) {
     let promises = []
     for (let file of fs.readdirSync(srcDir, { recursive: true })) {
         let srcFile = path.join(srcDir, file);
-        let outFile = path.join(outDir, file);
+        let outFile = path.join(outDir, NAME_TRANSFORMS[file] || file);
 
         promises.push(buildDistSingle(srcDir, srcFile, outFile, finalScripts));
     }
@@ -82,7 +84,7 @@ async function buildDistSingle(srcDir, srcPath, outPath, finalScripts) {
     }
 
     let isScriptFile = srcPath.endsWith('.js') || srcPath.endsWith('.ts');
-    if (isScriptFile && !finalScripts.find(elem => path.join(srcDir, elem) == path.join(srcPath))) {
+    if (isScriptFile && !Object.keys(finalScripts).find(elem => path.join(srcDir, elem) == path.join(srcPath))) {
         return;
     }
 

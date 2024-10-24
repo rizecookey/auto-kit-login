@@ -36,6 +36,7 @@
     "browser_specific_settings": {
         "gecko": {
             "id": "autokitlogin@rizecookey.net"
-        }
+        },
+        "gecko_android": {}
     }
 }

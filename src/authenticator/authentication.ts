@@ -1,27 +1,32 @@
 import browser from 'webextension-polyfill'
 
 import * as configLoader from '../common/config';
+import { AuthenticatorType } from '../common/config';
 import * as userConfigManager from '../common/user_config';
 import { getAuthenticator } from './authenticators';
 
-import { browserType } from '../common/browser_type';
+import { browserType } from '../common/platform.json';
 
 const config = configLoader.getConfig();
 const pageParameters = config.extension.pageParameters;
 
-let logger;
-let pageDetailsId;
-let loginPage;
-let authenticatorType;
-let redirectTo;
+let logger: HTMLElement | null;
+let pageDetailsId: string | null;
+let loginPage: URL | null;
+let authenticatorType: AuthenticatorType | null;
+let redirectTo: URL | null;
 
-let errorDiv;
+let errorDiv: HTMLElement | null;
 
 async function start() {
     await setup();
     try {
-        await makeLoginRequest(loginPage);
+        await makeLoginRequest(loginPage!!);
     } catch (error) {
+        if (!(error instanceof Error)) {
+            return;
+        }
+
         console.error(error);
         browser.runtime.sendMessage({
             auth: {
@@ -31,72 +36,72 @@ async function start() {
                 }
             }
         });
-        errorDiv.style.display = 'block';
+        errorDiv!!.style.display = 'block';
     }
 }
 
-async function setup() {
+async function setup(): Promise<void> {
     logger = document.getElementById('log');
     overwriteConsole();
 
     let url = new URL(window.location.href);
 
-    pageDetailsId = url.searchParams.get(pageParameters.pageDetailsId);
+    pageDetailsId = url.searchParams.get(pageParameters.pageDetailsId)!!;
     let pageDetails = config.pages[pageDetailsId];
 
     loginPage = pageDetails.loginPage;
     authenticatorType = pageDetails.authenticator;
-    redirectTo = url.searchParams.get(pageParameters.redirect);
+    redirectTo = new URL(url.searchParams.get(pageParameters.redirect)!!);
 
     let originalPageUrlSpan = document.getElementById('orig_page_url');
-    originalPageUrlSpan.innerText = new URL(loginPage).hostname;
+    originalPageUrlSpan!!.innerText = new URL(loginPage!!).hostname;
     errorDiv = document.getElementById('login_error');
-    document.getElementById('retry').onclick = function() {
+    document.getElementById('retry')!!.onclick = function() {
         location.reload();
         return true;
     };
-    document.getElementById('return').onclick = async function() {
-        let newUserConfig = {
+    document.getElementById('return')!!.onclick = async function() {
+        let newUserConfig: any = {
             autologinPages: {}
         };
-        newUserConfig.autologinPages[pageDetailsId] = false;
+        newUserConfig.autologinPages[pageDetailsId!!] = false;
         await userConfigManager.set(newUserConfig);
-        location.href = redirectTo;
+        location.href = redirectTo!!.toString();
         return true;
     };
 }
 
-const tagsToReplace = {
+const tagsToReplace: {[key: string]: string} = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;'
 };
 
-function replaceTag(tag) {
+function replaceTag(tag: string): string {
     return tagsToReplace[tag] || tag;
 }
 
-function safeTagsReplace(str) {
+function safeTagsReplace(str: string): string {
     if (!str) {
         return str;
     }
     return `${str}`.replace(/[&<>]/g, replaceTag);
 }
 
-function overwriteConsole() {
+function overwriteConsole(): void {
     let oldLog = console.log;
     let oldError = console.error;
     console.log = function() {
-        printToLog(arguments, false);
+        printToLog([...arguments], false);
         oldLog(...arguments);
     }
     console.error = function() {
-        printToLog(arguments, true);
+        printToLog([...arguments], true);
         oldError(...arguments);
     }
 }
 
-function printToLog(argumentsArray, error) {
+function printToLog(argumentsArray: any[], error: boolean) {
     let prefix = error ? '<span style="color:lightcoral">' : '';
     let suffix = (error ? '</span>' : '') + '<br/>'
     for (const element of argumentsArray) {
@@ -105,29 +110,27 @@ function printToLog(argumentsArray, error) {
                 printToLog([getErrorMessage(element)], error);
                 return;
             } else {
-                logger.innerHTML += prefix + safeTagsReplace(JSON.stringify(element, undefined, 2)) + suffix;
+                logger!!.innerHTML += prefix + safeTagsReplace(JSON.stringify(element, undefined, 2)) + suffix;
             }
         } else {
-            logger.innerHTML += prefix + safeTagsReplace(element) + suffix;
+            logger!!.innerHTML += prefix + safeTagsReplace(element) + suffix;
         }
     }
 }
 
-function getErrorMessage(error) {
+function getErrorMessage(error: Error): string {
     switch (browserType) {
-        case 'firefox': return `${error.name}: ${error.message}\n  ${error.stack.replaceAll(/\n/gm, "\n  ")}`;
-        case 'chromium': return error.stack;
+        case 'firefox': return `${error.name}: ${error.message}\n  ${(error.stack || '').replaceAll(/\n/gm, "\n  ")}`;
+        case 'chromium': return error.stack || '';
         default: return error.toString();
     }
 }
 
-async function makeLoginRequest(pageUrl) {
-    let authenticator = getAuthenticator(authenticatorType, pageDetailsId);
-    let successful = await authenticator.authenticate(pageUrl);
+async function makeLoginRequest(pageUrl: URL) {
+    let authenticator = getAuthenticator(authenticatorType!!, pageDetailsId!!);
+    await authenticator.authenticate(pageUrl);
 
-    if (successful) {
-        console.log('logged in, redirecting back');
-    }
+    console.log('logged in, redirecting back');
     redirectBack();
 }
 
