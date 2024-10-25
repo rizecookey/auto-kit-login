@@ -129,10 +129,6 @@ const config: Config = {
     }
 }
 
-function getConfig(): Config {
-    return config;
-}
-
 function getAutologinPageFilters() {
     let filters = [];
     for (let page in config.pages) {
@@ -144,4 +140,4 @@ function getAutologinPageFilters() {
     return filters;
 }
 
-export { getConfig, getAutologinPageFilters, AuthenticatorType, LoginDetectorConfig, CookieLoginDetectorConfig, IsRedirectedLoginDetectorConfig, PageConfig, Config }
+export { config, getAutologinPageFilters, AuthenticatorType, LoginDetectorConfig, CookieLoginDetectorConfig, IsRedirectedLoginDetectorConfig, PageConfig, Config }

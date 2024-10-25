@@ -1,13 +1,10 @@
-import browser from 'webextension-polyfill'
-import { WebNavigation } from 'webextension-polyfill';
-import * as loginUtils from './login_utils'
+import browser, { WebNavigation } from 'webextension-polyfill'
+import loginUtils from './login_utils'
 import { getLoginDetector } from '../common/login_detectors';
-import * as configLoader from '../common/config';
-import { PageConfig } from '../common/config';
+import { config, getAutologinPageFilters, PageConfig } from '../common/config';
 
-const config = configLoader.getConfig();
 const idpUrl = config.idpUrl;
-const autologinPageFilters = configLoader.getAutologinPageFilters();
+const autologinPageFilters = getAutologinPageFilters();
 
 const pageParameters = config.extension.pageParameters;
 
@@ -127,4 +124,4 @@ function registerListeners() {
     });
 }
 
-export { registerListeners }
+export default { registerListeners }

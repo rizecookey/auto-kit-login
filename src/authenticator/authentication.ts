@@ -1,13 +1,9 @@
 import browser from 'webextension-polyfill'
-
-import * as configLoader from '../common/config';
-import { AuthenticatorType } from '../common/config';
-import * as userConfigManager from '../common/user_config';
+import { config, AuthenticatorType } from '../common/config';
+import userConfigManager from '../common/user_config';
 import { getAuthenticator } from './authenticators';
-
 import { browserType } from '../common/platform.json';
 
-const config = configLoader.getConfig();
 const pageParameters = config.extension.pageParameters;
 
 let logger: HTMLElement | null;

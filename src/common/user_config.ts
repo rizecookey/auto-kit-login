@@ -1,7 +1,5 @@
 import browser from 'webextension-polyfill';
-import * as configLoader from './config';
-
-const config = configLoader.getConfig();
+import { config } from './config';
 
 const defaultUserConfig = getDefaultUserConfig();
 
@@ -49,4 +47,4 @@ function mergeRecursive(...objects: any[]) {
     return merged;
 }
 
-export { get, set }
+export default { get, set }

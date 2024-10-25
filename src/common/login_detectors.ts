@@ -56,4 +56,4 @@ function getLoginDetector(config: LoginDetectorConfig): LoginDetector<any> {
     }
 }
 
-export { getLoginDetector }
+export { getLoginDetector, LoginDetector }

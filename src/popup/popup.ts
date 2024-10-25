@@ -1,8 +1,5 @@
-import * as configLoader from '../common/config';
-import * as userConfigManager from '../common/user_config';
-import { PageConfig } from '../common/config';
-
-const config = configLoader.getConfig();
+import { config, PageConfig } from '../common/config';
+import userConfigManager from '../common/user_config';
 
 async function setup(): Promise<void> {
     await loadConfigOptions();

@@ -1,6 +1,5 @@
-import browser from 'webextension-polyfill';
-import { WebNavigation, Windows } from 'webextension-polyfill';
-import { getConfig, AuthenticatorType } from '../common/config'
+import browser, { WebNavigation, Windows } from 'webextension-polyfill';
+import { config, AuthenticatorType } from '../common/config';
 import { getLoginDetector } from '../common/login_detectors';
 
 const domParser = new DOMParser();
@@ -43,7 +42,7 @@ class DefaultAuthenticator implements Authenticator {
                     return;
                 }
 
-                let pageConfig = getConfig().pages[authenticator.#pageId];
+                let pageConfig = config.pages[authenticator.#pageId];
                 let loginDetectorConfig = pageConfig.loginDetector;
                 let loginDetector = getLoginDetector(loginDetectorConfig);
                 if (!(await loginDetector.isLoggedIn(pageConfig.hostname))) {
@@ -209,4 +208,4 @@ function getAuthenticator(type: AuthenticatorType, pageId: string): Authenticato
     }
 }
 
-export { getAuthenticator }
+export { getAuthenticator, Authenticator }

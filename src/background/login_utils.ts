@@ -1,9 +1,6 @@
-import browser from 'webextension-polyfill';
-import { WebRequest } from 'webextension-polyfill';
-import * as configLoader from '../common/config';
-import * as userConfigManager from '../common/user_config';
-
-const config = configLoader.getConfig();
+import browser, { WebRequest } from 'webextension-polyfill';
+import { config } from '../common/config';
+import userConfigManager from '../common/user_config';
 
 const logoutUrlFilter = config.filters.logout;
 
@@ -46,4 +43,4 @@ browser.webRequest.onResponseStarted.addListener(onVisitLogoutPage, {
 });
 browser.tabs.onRemoved.addListener((tabId, _) => clearPausedSites(tabId));
 
-export { setAuthenticationPaused, clearPausedSites, shouldAutoLogin }
+export default { setAuthenticationPaused, clearPausedSites, shouldAutoLogin }

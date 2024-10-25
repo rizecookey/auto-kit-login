@@ -1,4 +1,4 @@
-import * as autoLogin from './autologin';
+import autoLogin from './autologin';
 import { browserType } from '../common/platform.json';
 
 console.log('background script initialized');
