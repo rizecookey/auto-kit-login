@@ -76,7 +76,7 @@ class DefaultAuthenticator implements Authenticator {
     }
 }
 
-class FELSAuthenticator extends DefaultAuthenticator implements Authenticator {
+class FELSAuthenticator extends DefaultAuthenticator {
     static LOGIN_PAGE: URL = new URL("https://fels.scc.kit.edu/Shibboleth.sso/Login");
     static FELS_FORM_SELECT_KIT = {
         'jakarta.faces.partial.ajax': 'true',
