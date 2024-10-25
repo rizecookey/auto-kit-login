@@ -28,7 +28,7 @@ type LoginDetectorConfig = CookieLoginDetectorConfig | IsRedirectedLoginDetector
 interface CookieLoginDetectorConfig {
     type: 'cookie',
     options: {
-        cookie: string
+        cookie: RegExp
     }
 }
 
@@ -50,7 +50,7 @@ const config: Config = {
             loginDetector: {
                 type: 'cookie',
                 options: {
-                    cookie: '_shibsession.*'
+                    cookie: /_shibsession.*/
                 }
             }
         },
@@ -62,7 +62,7 @@ const config: Config = {
             loginDetector: {
                 type: 'cookie',
                 options: {
-                    cookie: '_shibsession.*'
+                    cookie: /_shibsession.*/
                 }
             }
         },
@@ -74,7 +74,7 @@ const config: Config = {
             loginDetector: {
                 type: 'cookie',
                 options: {
-                    cookie: '_shibsession.*'
+                    cookie: /_shibsession.*/
                 }
             }
         },
@@ -86,7 +86,7 @@ const config: Config = {
             loginDetector: {
                 type: 'cookie',
                 options: {
-                    cookie: '\\.AspNetCore\\.Identity\\.Application'
+                    cookie: /\.AspNetCore\.Identity\.Application/
                 }
             }
         },
@@ -98,7 +98,7 @@ const config: Config = {
             loginDetector: {
                 type: 'cookie',
                 options: {
-                    cookie: '\\.AspNet\\.SharedCookie'
+                    cookie: /\.AspNet\.SharedCookie/
                 }
             }
         },

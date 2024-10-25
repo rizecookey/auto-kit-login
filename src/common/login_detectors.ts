@@ -1,48 +1,49 @@
 import browser from 'webextension-polyfill';
 import { CookieLoginDetectorConfig, IsRedirectedLoginDetectorConfig, LoginDetectorConfig } from './config';
 
-class LoginDetector<T extends LoginDetectorConfig> {
-    #config: T;
+abstract class LoginDetector<T extends LoginDetectorConfig> {
+    protected config: T;
+
     constructor(config: T) {
-        this.#config = {...(config || {})};
+        this.config = {...(config || {})};
     }
 
-    async isLoggedIn(domain: string): Promise<boolean> {
-        return false;
-    }
+    abstract isLoggedIn(domain: string): Promise<boolean>;
 
-    getConfig(): T {
-        return {...this.#config};
+    protected getConfig(): T {
+        return {...this.config};
     }
 }
 
 class SessionCookieLoginDetector extends LoginDetector<CookieLoginDetectorConfig> {
-    #cookieRequiredRegex;
+    private cookieRequiredRegex: RegExp;
+
     constructor(config: CookieLoginDetectorConfig) {
         super(config);
-        this.#cookieRequiredRegex = this.getConfig().options.cookie;
+        this.cookieRequiredRegex = this.getConfig().options.cookie;
     }
 
     async isLoggedIn(domain: string): Promise<boolean> {
         return (await browser.cookies.getAll({
             domain: domain
-        })).find(cookie => cookie.name.match(this.#cookieRequiredRegex)) ? true : false;
+        })).find(cookie => cookie.name.match(this.cookieRequiredRegex)) ? true : false;
     }
 }
 
 class IsRedirectedLoginDetector extends LoginDetector<IsRedirectedLoginDetectorConfig> {
-    #from;
-    #to;
+    private from: string;
+    private to: string;
+
     constructor(options: IsRedirectedLoginDetectorConfig) {
         super(options);
-        this.#from = options.options.from;
-        this.#to = options.options.to;
+        this.from = options.options.from;
+        this.to = options.options.to;
     }
 
     async isLoggedIn(domain: string): Promise<boolean> {
-        let response = await fetch(this.#from, { method: 'GET' });
+        let response = await fetch(this.from, { method: 'GET' });
         let url = new URL(response.url);
-        return url.origin + url.pathname != this.#to;
+        return url.origin + url.pathname != this.to;
     }
 }
 

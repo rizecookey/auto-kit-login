@@ -9,19 +9,14 @@ const loginFormPostHeaders: HeadersInit = {
 }
 
 interface Authenticator {
-    getPageId(): string;
     authenticate(pageUrl: URL): Promise<void>;
 }
 
 class DefaultAuthenticator implements Authenticator {
-    #pageId: string;
+    protected pageId: string;
 
     constructor(pageId: string) {
-        this.#pageId = pageId;
-    }
-
-    getPageId(): string {
-        return this.#pageId;
+        this.pageId = pageId;
     }
 
     async authenticate(pageUrl: URL): Promise<void> {
@@ -42,7 +37,7 @@ class DefaultAuthenticator implements Authenticator {
                     return;
                 }
 
-                let pageConfig = config.pages[authenticator.#pageId];
+                let pageConfig = config.pages[authenticator.pageId];
                 let loginDetectorConfig = pageConfig.loginDetector;
                 let loginDetector = getLoginDetector(loginDetectorConfig);
                 if (!(await loginDetector.isLoggedIn(pageConfig.hostname))) {
@@ -112,7 +107,7 @@ class FELSAuthenticator extends DefaultAuthenticator {
         return await super.authenticate(FELSAuthenticator.LOGIN_PAGE);
     }
 
-    async initiateAuthentication(pageUrl: URL): Promise<Response> {
+    private async initiateAuthentication(pageUrl: URL): Promise<Response> {
         console.log(`loading login page from ${pageUrl}`);
         let pageLoadResponse = await fetch(pageUrl, {
             method: 'GET'
@@ -123,7 +118,7 @@ class FELSAuthenticator extends DefaultAuthenticator {
         return await this.autoSubmitForm(pageUrl, document);
     }
 
-    async selectKITOnFELSPage(response: Response): Promise<Response> {
+    private async selectKITOnFELSPage(response: Response): Promise<Response> {
         console.log(`selecting KIT on ${response.url}`);
 
         let doc = await parseResponseToDoc(response);
@@ -147,7 +142,7 @@ class FELSAuthenticator extends DefaultAuthenticator {
         });
     }
 
-    fillFELSSelectionForm(doc: Document, defaults: {[key: string]: string}): URLSearchParams {
+    private fillFELSSelectionForm(doc: Document, defaults: {[key: string]: string}): URLSearchParams {
         let formData = new URLSearchParams();
 
         for (let fieldName in defaults) {
@@ -163,7 +158,7 @@ class FELSAuthenticator extends DefaultAuthenticator {
         return formData;
     }
 
-    async autoSubmitForm(originalUrl: URL, doc: Document): Promise<Response> {
+    private async autoSubmitForm(originalUrl: URL, doc: Document): Promise<Response> {
         let form = doc.forms[0];
 
         let formData = this.scrapePresetFormDetails(doc, 0);
@@ -178,7 +173,7 @@ class FELSAuthenticator extends DefaultAuthenticator {
         });
     }
 
-    scrapePresetFormDetails(doc: Document, formId: number): URLSearchParams {
+    private scrapePresetFormDetails(doc: Document, formId: number): URLSearchParams {
         let formData = new URLSearchParams();
 
         let form = doc.forms[formId];
