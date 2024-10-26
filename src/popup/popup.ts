@@ -30,7 +30,7 @@ function createPageOption(pageId: string, pageDetails: PageConfig, userConfig: a
 
     let nameCell = document.createElement('div');
     nameCell.className = 'table_cell name';
-    nameCell.innerHTML = pageDetails.name;
+    nameCell.innerText = pageDetails.name;
 
     let toggleCell = document.createElement('div');
     toggleCell.className = 'table_cell toggle';

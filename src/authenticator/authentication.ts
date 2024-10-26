@@ -101,20 +101,25 @@ function overwriteConsole(): void {
 }
 
 function printToLog(argumentsArray: any[], error: boolean) {
-    let prefix = error ? '<span style="color:lightcoral">' : '';
-    let suffix = (error ? '</span>' : '') + '<br/>'
+    let messageElement = document.createElement('span');
+    if (error) {
+        messageElement.style.color = 'lightcoral';
+    }
+    let lineBreak = document.createElement('br');
     for (const element of argumentsArray) {
         if (typeof element == 'object') {
             if (element instanceof Error) {
                 printToLog([getErrorMessage(element)], error);
                 return;
-            } else {
-                logger!!.innerHTML += prefix + safeTagsReplace(JSON.stringify(element, undefined, 2)) + suffix;
             }
+            messageElement.innerText += JSON.stringify(element, undefined, 2);
         } else {
-            logger!!.innerHTML += prefix + safeTagsReplace(element) + suffix;
+            messageElement.innerText += element;
         }
     }
+
+    logger?.appendChild(messageElement);
+    logger?.appendChild(lineBreak);
 }
 
 function getErrorMessage(error: Error): string {
