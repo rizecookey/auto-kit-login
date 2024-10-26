@@ -3,6 +3,9 @@ import { config, AuthenticatorType } from '../common/config';
 import userConfigManager from '../common/user_config';
 import { getAuthenticator } from './authenticators';
 import { browserType } from '../common/platform.json';
+import { initBridge } from '../common/bridge/initializer';
+
+initBridge('page');
 
 const pageParameters = config.extension.pageParameters;
 
@@ -134,7 +137,7 @@ function redirectBack() {
     browser.runtime.sendMessage({
         auth: {
             redirect: {
-                url: redirectTo
+                url: redirectTo?.toString()
             },
             pageDetailsId: pageDetailsId
         }

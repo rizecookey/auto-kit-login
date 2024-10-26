@@ -1,6 +1,5 @@
-import browser, { WebNavigation, Windows } from 'webextension-polyfill';
-import { config, AuthenticatorType } from '../common/config';
-import { getLoginDetector } from '../common/login_detectors';
+import { AuthenticatorType } from '../common/config';
+import { getIdpLoginHandler } from './idp_login_handlers';
 
 const domParser = new DOMParser();
 
@@ -21,52 +20,11 @@ class DefaultAuthenticator implements Authenticator {
 
     async authenticate(pageUrl: URL): Promise<void> {
         console.log("opening login popup");
-        let popup = await browser.windows.create({ type: 'popup', height: 600, width: 500, url: pageUrl.toString() });
+        let handler = await getIdpLoginHandler(this.pageId, pageUrl);
+        let promise = handler.handleLogin();
         console.log("waiting for authentication");
 
-        return await this.waitForAuthentication(popup);
-    }
-
-    waitForAuthentication(popup: Windows.Window): Promise<void> {
-        let authenticator = this;
-        let isLoggedIn = false;
-        return new Promise<void>((resolve, reject) => {
-            async function onNavigateInPopup(details: WebNavigation.OnCommittedDetailsType) {
-                let windowId = (await browser.tabs.get(details.tabId)).windowId;
-                if (popup.id == null || windowId != popup.id) {
-                    return;
-                }
-
-                let pageConfig = config.pages[authenticator.pageId];
-                let loginDetectorConfig = pageConfig.loginDetector;
-                let loginDetector = getLoginDetector(loginDetectorConfig);
-                if (!(await loginDetector.isLoggedIn(pageConfig.hostname))) {
-                    return;
-                }
-
-                console.log("window seems to have completed authentication");
-                isLoggedIn = true;
-                browser.windows.remove(popup.id);
-                resolve();
-            }
-
-            async function onWindowClosed(windowId: number) {
-                if (windowId != popup.id) {
-                    return;
-                }
-
-                console.log("popup closed, removing listeners");
-                browser.webNavigation.onCommitted.removeListener(onNavigateInPopup);
-                browser.windows.onRemoved.removeListener(onWindowClosed);
-                
-                if (!isLoggedIn) {
-                    reject(new Error("login window was closed without successful authentication"));
-                }
-            }
-
-            browser.webNavigation.onCommitted.addListener(onNavigateInPopup);
-            browser.windows.onRemoved.addListener(onWindowClosed)
-        });
+        return await promise;
     }
 }
 

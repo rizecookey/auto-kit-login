@@ -1,5 +1,8 @@
+import { initBridge } from '../common/bridge/initializer'
 import autoLogin from './autologin';
 import { browserType } from '../common/platform.json';
+
+initBridge('background');
 
 console.log('background script initialized');
 console.log(`platform: ${browserType}`);

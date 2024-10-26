@@ -2,22 +2,28 @@ import browser, { WebNavigation } from 'webextension-polyfill'
 import loginUtils from './login_utils'
 import { getLoginDetector } from '../common/login_detectors';
 import { config, getAutologinPageFilters, PageConfig } from '../common/config';
+import { isSpecialTab, isSpecialWindow } from '../common/bridged/special_tabs';
+
+// stupid chrome prerendering
+type NavigationDetails = WebNavigation.OnBeforeNavigateDetailsType & { documentLifecycle?: string };
+
+const AUTHENTICATION_EXT_PAGE = "authenticator/authenticating.html";
 
 const idpUrl = config.idpUrl;
 const autologinPageFilters = getAutologinPageFilters();
-
 const pageParameters = config.extension.pageParameters;
 
-async function onVisitAuthenticatablePage(details: WebNavigation.OnBeforeNavigateDetailsType & { documentLifecycle?: string }) {
+async function onVisitAuthenticatablePage(details: NavigationDetails) {
     if (details.documentLifecycle == 'prerender') {
         return;
     }
+
     let tab = await browser.tabs.get(details.tabId);
-    if (tab.windowId === undefined) {
+    if (await isSpecialTab(details.tabId)) {
         return;
     }
-    let window = await browser.windows.get(tab.windowId);
-    if (window.type === 'popup') {
+
+    if (browser.windows !== undefined && tab.windowId !== undefined && await isSpecialWindow(tab.windowId)) {
         return;
     }
 
@@ -75,7 +81,7 @@ async function redirectAndAuthenticate(tabId: number, pageDetailsId: string, ori
     params.append(pageParameters.redirect, originalPage.toString());
     params.append(pageParameters.pageDetailsId, pageDetailsId)
     browser.tabs.update(tabId, {
-        url: `authenticator/authenticating.html?${params.toString()}`
+        url: `${AUTHENTICATION_EXT_PAGE}?${params.toString()}`
     });
     console.log('starting authentication on tab ' + tabId);
 }
@@ -117,10 +123,11 @@ function registerListeners() {
     }, { url: autologinPageFilters });
     browser.tabs.onRemoved.addListener(tabId => activeVisitListenersPerTab.delete(tabId));
 
-    browser.runtime.onMessage.addListener(async (request: any, sender) => {
+    browser.runtime.onMessage.addListener((request: any, sender, _) => {
         if (request.auth) {
-            await onAuthRequest(sender, request.auth);
+            onAuthRequest(sender, request.auth);
         }
+        return undefined;
     });
 }
 
