@@ -1,6 +1,6 @@
 import { initBridge } from '../common/bridge/initializer'
 import autoLogin from './autologin';
-import { browserType } from '../common/platform.json';
+import { browserType } from '../common/platform';
 
 initBridge('background');
 

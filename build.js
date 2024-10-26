@@ -10,12 +10,18 @@ const BUILD_SRC_COPY_DIR = '.build/src/'
 const OUT_DIR = 'dist/';
 
 const PLATFORMS = ['chrome', 'firefox'];
-const FINAL_SCRIPTS = {
-    "authenticator/authentication.ts": "authenticator/authentication.js",
-    "background/background.ts": "background/background.js",
-    "popup/popup.ts": "popup/popup.js"
-};
-const NAME_TRANSFORMS = {...FINAL_SCRIPTS};
+const FINAL_FILES = [
+    "authenticator/authenticating.html",
+    "authenticator/authenticating.css",
+    "authenticator/authentication.ts",
+    "background/background.ts",
+    "common_style.css",
+    "popup/popup.ts",
+    "popup/popup.html",
+    "popup/popup.css",
+    "manifest.json",
+    "kit_cookie.png"
+]
 
 let mode;
 
@@ -48,60 +54,31 @@ async function build() {
         }
         fs.mkdirSync(CACHE_DIR);
 
-        const platformDir = path.resolve(PLATFORM_SRC, platform);
+        const platformDir = path.join(PLATFORM_SRC, platform);
         fs.copySync(SRC_DIR, BUILD_SRC_COPY_DIR);
         fs.copySync(platformDir, BUILD_SRC_COPY_DIR, { overwrite: true });
-        logBuildStep(`copied src to`, BUILD_SRC_COPY_DIR);
-        await buildDist(BUILD_SRC_COPY_DIR, path.join(OUT_DIR, platform), FINAL_SCRIPTS);
+        logBuildStep(`copied src`, `${SRC_DIR}, ${platformDir} > ${BUILD_SRC_COPY_DIR}`);
+        await bundle(BUILD_SRC_COPY_DIR, FINAL_FILES, path.join(OUT_DIR, platform));
     }
 }
 
-async function bundle(srcDir, input, output) {
+async function bundle(srcDir, finalFiles, outDir) {
+    logBuildStep('bundling', `${srcDir}`);
     await esbuild.build({
-        entryPoints: [input],
+        entryPoints: finalFiles.map(file => path.join(srcDir, file)),
         minify: mode == 'release' ? true : false,
         bundle: true,
-        outfile: output
+        platform: 'browser',
+        loader: {
+            '.png': 'copy',
+            '.html': 'copy',
+            '.json': 'copy',
+            '.ttf': 'copy'
+        },
+        outbase: srcDir,
+        outdir: outDir
     });
-}
-
-async function buildDist(srcDir, outDir, finalScripts) {
-    fs.mkdirSync(outDir);
-    let promises = []
-    for (let file of fs.readdirSync(srcDir, { recursive: true })) {
-        let srcFile = path.join(srcDir, file);
-        let outFile = path.join(outDir, NAME_TRANSFORMS[file] || file);
-
-        promises.push(buildDistSingle(srcDir, srcFile, outFile, finalScripts));
-    }
-
-    await Promise.all(promises);
-}
-
-async function buildDistSingle(srcDir, srcPath, outPath, finalScripts) {
-    if ((await fs.lstat(srcPath)).isDirectory()) {
-        return;
-    }
-
-    let isScriptFile = srcPath.endsWith('.js') || srcPath.endsWith('.ts');
-    if (isScriptFile && !Object.keys(finalScripts).find(elem => path.join(srcDir, elem) == path.join(srcPath))) {
-        return;
-    }
-
-    let outDir = path.dirname(outPath);
-    if (!(await fs.exists(outDir))) {
-        await fs.mkdirs(outDir);
-    }
-
-    if (!isScriptFile) {
-        await fs.copyFile(srcPath, outPath);
-        logBuildStep('copied', `${srcPath} > ${outPath}`);
-        return;
-    }
-
-    logBuildStep('bundling', srcPath);
-    await bundle(srcDir, srcPath, outPath);
-    logBuildStep('bundled', `${srcPath} > ${outPath}`);
+    logBuildStep('bundled', `${srcDir} > ${outDir}`);
 }
 
 mode = argv[2];

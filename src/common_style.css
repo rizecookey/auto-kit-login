@@ -1,6 +1,6 @@
 @font-face {
     font-family: 'JetBrains-Mono';
-    src: url('/resources/fonts/jetbrains-mono/JetBrainsMono-VariableFont_wght.ttf');
+    src: url('./resources/fonts/jetbrains-mono/JetBrainsMono-VariableFont_wght.ttf');
 }
 
 :root {

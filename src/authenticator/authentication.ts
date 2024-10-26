@@ -2,7 +2,7 @@ import browser from 'webextension-polyfill'
 import { config, AuthenticatorType } from '../common/config';
 import userConfigManager from '../common/user_config';
 import { getAuthenticator } from './authenticators';
-import { browserType } from '../common/platform.json';
+import { browserType } from '../common/platform';
 import { initBridge } from '../common/bridge/initializer';
 
 initBridge('page');
