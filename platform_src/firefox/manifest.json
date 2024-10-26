@@ -20,7 +20,7 @@
     "web_accessible_resources": [
         {
             "extension_ids": [
-                "autokitlogin@rizecookey.net"
+                "auto-kit-login@rizecookey.net"
             ],
             "resources": ["authenticator/authenticating.html"]
         }
@@ -35,7 +35,7 @@
     },
     "browser_specific_settings": {
         "gecko": {
-            "id": "autokitlogin@rizecookey.net"
+            "id": "auto-kit-login@rizecookey.net"
         },
         "gecko_android": {}
     }
