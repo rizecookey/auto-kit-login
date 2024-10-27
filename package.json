@@ -1,6 +1,6 @@
 {
   "name": "auto-kit-login",
-  "version": "1.1.0-dev",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -37,6 +37,7 @@
     "sass-loader": "^16.0.2",
     "style-loader": "^4.0.0",
     "typescript": "^5.6.3",
+    "web-ext": "^8.3.0",
     "webextension-polyfill": "^0.10.0"
   },
   "dependencies": {
