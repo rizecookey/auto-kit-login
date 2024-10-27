@@ -1,0 +1,10 @@
+@import "~bootstrap/scss/bootstrap.scss";
+
+@font-face {
+    font-family: 'JetBrains-Mono';
+    src: url('./resources/fonts/jetbrains-mono/JetBrainsMono-VariableFont_wght.ttf');
+}
+
+body {
+    font-family: 'JetBrains-Mono', monospace;
+}

@@ -2,6 +2,7 @@ import fs from 'fs-extra'
 import path from 'path'
 import esbuild from 'esbuild'
 import { argv } from 'process';
+import { sassPlugin } from 'esbuild-sass-plugin'
 
 const PLATFORM_SRC = 'platform_src/';
 const SRC_DIR = 'src/';
@@ -15,7 +16,7 @@ const FINAL_FILES = [
     "authenticator/authenticating.css",
     "authenticator/authentication.ts",
     "background/background.ts",
-    "common_style.css",
+    "common_style.scss",
     "popup/popup.ts",
     "popup/popup.html",
     "popup/popup.css",
@@ -75,6 +76,7 @@ async function bundle(srcDir, finalFiles, outDir) {
             '.json': 'copy',
             '.ttf': 'copy'
         },
+        plugins: [sassPlugin({silenceDeprecations: ['import', 'global-builtin', 'mixed-decls', 'color-functions']})], // deprecations caused by bootstrap
         outbase: srcDir,
         outdir: outDir
     });

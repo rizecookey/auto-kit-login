@@ -1,28 +1,20 @@
 body {
     min-width: 300px;
-    padding: 5px;
 }
 
 h1 {
-    font-size: 20px;
+    text-align: center;
 }
 
-.table {
-    display: table;
-    flex-wrap: wrap;
-    margin: 5px;
-    width: 100%;
-}
-
-.table_row {
-    display: table-row;
-}
-
-.table_cell {
-    display: table-cell;
+.user_config {
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
 }
 
 .toggle {
-    position: relative;
-    right: 0px;
+    margin: 0;
+    padding: 0;
+    text-align: right;
+    vertical-align: middle;
 }

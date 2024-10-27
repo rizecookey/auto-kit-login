@@ -1,31 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
-
-<head>
+<html lang="en" data-bs-theme="dark">
+  <head>
     <title>Authenticating...</title>
-    <link rel="stylesheet" href="../common_style.css">
-    <link rel="stylesheet" href="authenticating.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../common_style.css" />
+    <link rel="stylesheet" href="authenticating.css" />
     <script src="authentication.js" defer></script>
-</head>
+  </head>
 
-<body>
-    <div class="main">
-        <h1>Authenticating...</h1>
-        Auto KIT Login detected that you are currently not
-        logged in on <b><span id="orig_page_url"></span></b>!
-        Logging you in...
-        <br/><br/>
-        <div class="login_error" id="login_error">
-            An error has occured while trying to authenticate, 
-            for more information see the log below.<br>
-            <button id="return">Disable authentication for this page</button>
-            <button id="retry">Retry authentication</button>
-            <br/><br/>
+  <body>
+    <div
+      class="d-flex flex-column min-vh-100 justify-content-center align-items-center text-center container-md"
+    >
+      <h1>Authenticating...</h1>
+      <span>
+        Auto KIT Login detected that you are currently not logged in on
+        <b><span id="orig_page_url"></span></b>! Logging you in...
+      </span>
+      <br />
+      <div id="login_error">
+        <div class="d-flex flex-column">
+          <span>
+            An error has occured while trying to authenticate, for more
+            information see the log below.<br />
+          </span>
+          <div
+            class="d-flex flex-row justify-content-around align-items-center p-3"
+          >
+            <button type="button" class="btn btn-danger" id="return">
+              Disable for this page
+            </button>
+            <button type="button" class="btn btn-primary" id="retry">
+              Retry authentication
+            </button>
+          </div>
+          <br />
         </div>
-        <div class="log">
-            <pre id="log"></pre>
-        </div>
+      </div>
+      <div class="log border">
+        <pre id="log"></pre>
+      </div>
     </div>
-</body>
-
+  </body>
 </html>

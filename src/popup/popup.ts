@@ -1,5 +1,6 @@
 import { config, PageConfig } from '../common/config';
 import userConfigManager from '../common/user_config';
+import * as bootstrap from 'bootstrap'
 
 async function setup(): Promise<void> {
     await loadConfigOptions();
@@ -26,16 +27,18 @@ async function loadConfigOptions(): Promise<void> {
 
 function createPageOption(pageId: string, pageDetails: PageConfig, userConfig: any): HTMLDivElement {
     let tableRow = document.createElement('div');
-    tableRow.className = 'table_row';
+    tableRow.className = 'row flex-nowrap';
 
     let nameCell = document.createElement('div');
-    nameCell.className = 'table_cell name';
+    nameCell.className = 'col-10 name';
     nameCell.innerText = pageDetails.name;
 
     let toggleCell = document.createElement('div');
-    toggleCell.className = 'table_cell toggle';
+    toggleCell.className = 'col toggle form-check form-switch';
     let toggle = document.createElement('input');
-    toggle.type = 'checkbox'
+    toggle.className = "form-check-input";
+    toggle.type = 'checkbox';
+    toggle.role = 'switch';
     toggle.id = `autologin_${pageId}`;
     toggle.checked = userConfig.autologinPages[pageId];
     toggle.onchange = async function() {
