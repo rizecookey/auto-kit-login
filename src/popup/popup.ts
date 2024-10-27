@@ -15,7 +15,14 @@ async function loadConfigOptions(): Promise<void> {
     enabledToggle.onchange = async function() {
         userConfigManager.set({
             enabled: enabledToggle.checked
-        })
+        });
+    };
+    let autoSubmitToggle = document.querySelector<HTMLInputElement>('input[id=enable_auto_submit]')!!;
+    autoSubmitToggle.checked = userConfig.autoSubmitLoginForm;
+    autoSubmitToggle.onchange = async function() {
+        userConfigManager.set({
+            autoSubmitLoginForm: autoSubmitToggle.checked
+        });
     };
 
     for (let pageId in config.pages) {

@@ -16,6 +16,7 @@ const FINAL_FILES = [
     "authenticator/authenticating.css",
     "authenticator/authentication.ts",
     "background/background.ts",
+    "content/auto_submit.ts",
     "common_style.scss",
     "popup/popup.ts",
     "popup/popup.html",

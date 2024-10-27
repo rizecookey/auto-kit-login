@@ -13,7 +13,7 @@
     <div class="user_config">
       <h1>Configuration</h1>
       <div class="container">
-        <div class="row flex-nowrap">
+        <div class="row flex-nowrap" title="Enable automatic login redirection">
           <div class="col-10 name">Enable autologin</div>
           <div class="col toggle form-check form-switch">
             <input
@@ -21,6 +21,19 @@
               role="switch"
               class="form-check-input"
               id="enable_autologin"
+            />
+          </div>
+        </div>
+        <div class="row flex-nowrap" title="Enable auto submitting the login form on password paste">
+          <div class="col-10 name">
+            Auto submit form
+          </div>
+          <div class="col toggle form-check form-switch">
+            <input
+              type="checkbox"
+              role="switch"
+              class="form-check-input"
+              id="enable_auto_submit"
             />
           </div>
         </div>

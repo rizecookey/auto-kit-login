@@ -30,6 +30,12 @@
             "background/background.js"
         ]
     },
+    "content_scripts": [
+        {
+            "matches": ["*://idp.scc.kit.edu/*"],
+            "js": ["content/auto_submit.js"]
+        }
+    ],
     "icons": {
         "822": "kit_cookie.png"
     },

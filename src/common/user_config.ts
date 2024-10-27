@@ -1,11 +1,24 @@
 import browser from 'webextension-polyfill';
 import { config } from './config';
 
+type UserConfig = {
+    enabled: boolean,
+    autoSubmitLoginForm: boolean,
+    autologinPages: { [key: string]: boolean }
+}
+
+type PartialUserConfig = {
+    enabled?: boolean,
+    autoSubmitLoginForm?: boolean,
+    autologinPages?: { [key: string]: boolean }
+}
+
 const defaultUserConfig = getDefaultUserConfig();
 
-function getDefaultUserConfig() {
-    let userConfig: any = {
+function getDefaultUserConfig(): UserConfig {
+    let userConfig: UserConfig = {
         enabled: true,
+        autoSubmitLoginForm: false,
         autologinPages: {}
     };
 
@@ -16,13 +29,13 @@ function getDefaultUserConfig() {
     return userConfig;
 }
 
-async function get(): Promise<any> {
+async function get(): Promise<UserConfig> {
     let modified = (await browser.storage.local.get('userConfig'))?.userConfig;
 
     return mergeRecursive(defaultUserConfig, modified);
 }
 
-async function set(newUserConfig: any) {
+async function set(newUserConfig: PartialUserConfig) {
     let userConfig = await get();
     let merged = mergeRecursive(defaultUserConfig, userConfig, newUserConfig);
 
@@ -48,3 +61,4 @@ function mergeRecursive(...objects: any[]) {
 }
 
 export default { get, set }
+export { UserConfig, PartialUserConfig }
