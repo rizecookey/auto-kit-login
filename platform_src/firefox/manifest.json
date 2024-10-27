@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Auto KIT Login",
     "description": "Automatic Shibboleth login for KIT pages",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "host_permissions": [
         "*://*.kit.edu/"
     ],
