@@ -4,13 +4,12 @@ import { config } from './config';
 type UserConfig = {
     enabled: boolean,
     autoSubmitLoginForm: boolean,
-    autologinPages: { [key: string]: boolean }
+    loginWindowType: 'popup' | 'tab';
+    autologinPages: { [key: string]: boolean },
 }
 
 type PartialUserConfig = {
-    enabled?: boolean,
-    autoSubmitLoginForm?: boolean,
-    autologinPages?: { [key: string]: boolean }
+    [Property in keyof UserConfig]?: UserConfig[Property];
 }
 
 const defaultUserConfig = getDefaultUserConfig();
@@ -19,6 +18,7 @@ function getDefaultUserConfig(): UserConfig {
     let userConfig: UserConfig = {
         enabled: true,
         autoSubmitLoginForm: false,
+        loginWindowType: browser.windows !== undefined ? 'popup' : 'tab',
         autologinPages: {}
     };
 

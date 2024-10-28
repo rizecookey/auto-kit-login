@@ -1,3 +1,5 @@
+import browser from 'webextension-polyfill'
+
 interface Config {
     pages: {[key: string]: PageConfig},
     idpUrl: string,
@@ -9,6 +11,9 @@ interface Config {
         pageParameters: {
             redirect: string,
             pageDetailsId: string
+        },
+        userConfig: {
+            loginWindowTypes: LoginWindowConfiguration
         }
     }
 }
@@ -22,6 +27,9 @@ interface PageConfig {
 }
 
 type AuthenticatorType = 'default' | 'fels';
+
+type LoginWindowType = 'popup' | 'tab';
+type LoginWindowConfiguration = {[Property in LoginWindowType]?: string};
 
 type LoginDetectorConfig = CookieLoginDetectorConfig | IsRedirectedLoginDetectorConfig;
 
@@ -38,6 +46,14 @@ interface IsRedirectedLoginDetectorConfig {
         from: string,
         to: string
     }
+}
+
+let loginWindowConfiguration: LoginWindowConfiguration = {
+    'tab': 'New tab'
+};
+
+if (browser.windows !== undefined) {
+    loginWindowConfiguration['popup'] = 'Popup'
 }
 
 const config: Config = {
@@ -125,6 +141,9 @@ const config: Config = {
         pageParameters: {
             redirect: 'redirect_to',
             pageDetailsId: 'page_config',
+        },
+        userConfig: {
+            loginWindowTypes: loginWindowConfiguration
         }
     }
 }
@@ -140,4 +159,4 @@ function getAutologinPageFilters() {
     return filters;
 }
 
-export { config, getAutologinPageFilters, AuthenticatorType, LoginDetectorConfig, CookieLoginDetectorConfig, IsRedirectedLoginDetectorConfig, PageConfig, Config }
+export { config, getAutologinPageFilters, AuthenticatorType, LoginDetectorConfig, CookieLoginDetectorConfig, IsRedirectedLoginDetectorConfig, PageConfig, Config, LoginWindowType }

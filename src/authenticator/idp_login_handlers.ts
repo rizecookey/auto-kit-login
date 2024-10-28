@@ -1,5 +1,6 @@
 import browser, { WebNavigation } from "webextension-polyfill";
 import { config, PageConfig } from "../common/config";
+import userConfig from '../common/user_config';
 import { getLoginDetector, LoginDetector } from "../common/login_detectors";
 import { createSpecialWindow, createSpecialTab } from "../common/bridged/special_tabs"
 
@@ -10,15 +11,12 @@ abstract class IdpLoginHandler {
 
     protected loginDetector: LoginDetector<any>;
 
-    protected state: 'initialized' | 'handling_login' | 'done';
-
     constructor(pageId: string, loginUrl: URL) {
         this.pageId = pageId;
         this.pageConfig = config.pages[pageId];
         this.loginUrl = loginUrl;
 
         this.loginDetector = getLoginDetector(this.pageConfig.loginDetector);
-        this.state = 'initialized';
     }
 
     abstract handleLogin(): Promise<void>;
@@ -108,11 +106,13 @@ class TabIdpLoginHandler extends IdpLoginHandler {
 }
 
 async function getIdpLoginHandler(pageId: string, loginUrl: URL): Promise<IdpLoginHandler> {
-    if (browser.windows !== undefined) {
-        return new PopupIdpLoginHandler(pageId, loginUrl);
-    }
+    let loginWindowType = (await userConfig.get()).loginWindowType;
 
-    return new TabIdpLoginHandler(pageId, loginUrl);
+    switch (loginWindowType) {
+        case 'popup': return new PopupIdpLoginHandler(pageId, loginUrl);
+        case 'tab': return new TabIdpLoginHandler(pageId, loginUrl);
+        default: throw new Error(`no login handler for login window type ${loginWindowType}`);
+    }
 }
 
 export { IdpLoginHandler, getIdpLoginHandler }

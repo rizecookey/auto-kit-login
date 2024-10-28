@@ -13,28 +13,51 @@
     <div class="user_config">
       <h1>Configuration</h1>
       <div class="container">
-        <div class="row flex-nowrap" title="Enable automatic login redirection">
+        <div
+          class="row flex-nowrap align-items-center"
+          title="Enable automatic login redirection"
+        >
           <div class="col-10 name">Enable autologin</div>
-          <div class="col toggle form-check form-switch">
+          <div class="col option toggle form-check form-switch">
             <input
               type="checkbox"
               role="switch"
-              class="form-check-input"
+              class="form-check-input float-end"
               id="enable_autologin"
             />
           </div>
         </div>
-        <div class="row flex-nowrap" title="Enable auto submitting the login form on password paste">
-          <div class="col-10 name">
-            Auto submit form
-          </div>
+        <div
+          class="row flex-nowrap align-items-center"
+          title="Enable auto submitting the login form on password paste"
+        >
+          <div class="col-10 name">Auto submit form</div>
           <div class="col toggle form-check form-switch">
             <input
               type="checkbox"
               role="switch"
-              class="form-check-input"
+              class="form-check-input float-end"
               id="enable_auto_submit"
             />
+          </div>
+        </div>
+        <div
+          class="row flex-nowrap align-items-center"
+          title="Select the type of login window to be opened automatically"
+        >
+          <div class="col-7 name">Login window type</div>
+          <div class="col">
+            <div class="dropdown float-end" id="login_window_type">
+              <button
+                class="btn btn-secondary dropdown-toggle"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Unknown
+              </button>
+              <ul class="dropdown-menu" id="login_window_type_options"></ul>
+            </div>
           </div>
         </div>
         <br />
