@@ -8,12 +8,21 @@ async function setup(): Promise<void> {
     const passwordField = document.querySelector<HTMLInputElement>('input[id=password]');
     const submitButton = document.querySelector<HTMLButtonElement>('button[id=sbmt]');
 
-    passwordField?.addEventListener('input', async () => {
-        if (passwordField.value.length !== 0 && await shouldAutoSubmit()) {
-            submitButton?.click();
+    if (!passwordField || !submitButton) {
+        // not the login page
+        return;
+    }
+
+    async function onPotentialPasswordInput() {
+        if (passwordField!!.value.length !== 0 && await shouldAutoSubmit()) {
+            submitButton!!.click();
         }
-    })
+    }
+
+    passwordField?.addEventListener('input', () => onPotentialPasswordInput());
+    onPotentialPasswordInput();
+
+    console.log("auto submit script has been loaded");
 }
 
 setup();
-console.log("auto submit script has been loaded");
