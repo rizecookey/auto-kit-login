@@ -14,8 +14,7 @@
         "webNavigation",
         "webRequest",
         "cookies",
-        "storage",
-        "scripting"
+        "storage"
     ],
     "web_accessible_resources": [
         {

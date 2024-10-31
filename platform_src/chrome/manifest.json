@@ -14,8 +14,7 @@
         "webNavigation",
         "webRequest",
         "cookies",
-        "storage",
-        "scripting"
+        "storage"
     ],
     "background": {
         "service_worker": "background/background.js"
