@@ -4,6 +4,7 @@ import userConfigManager from '../common/user_config';
 import { getAuthenticator } from './authenticators';
 import { browserType } from '../common/platform';
 import { initBridge } from '../common/bridge/initializer';
+import loginUtils from '../common/bridged/login_utils'
 
 initBridge('page');
 
@@ -55,11 +56,11 @@ async function setup(): Promise<void> {
     let originalPageUrlSpan = document.getElementById('orig_page_url');
     originalPageUrlSpan!!.innerText = new URL(loginPage!!).hostname;
     errorDiv = document.getElementById('login_error');
-    document.getElementById('retry')!!.onclick = function() {
+    document.getElementById('retry')!!.onclick = function () {
         location.reload();
         return true;
     };
-    document.getElementById('return')!!.onclick = async function() {
+    document.getElementById('return')!!.onclick = async function () {
         let newUserConfig: any = {
             autologinPages: {}
         };
@@ -68,9 +69,14 @@ async function setup(): Promise<void> {
         location.href = redirectTo!!.toString();
         return true;
     };
+    document.getElementById('pause')!!.onclick = async function () {
+        await loginUtils.setAuthenticationPaused([(await browser.tabs.getCurrent())?.id!!, Object.keys(config.pages), true]);
+        location.href = redirectTo!!.toString();
+        return true;
+    };
 }
 
-const tagsToReplace: {[key: string]: string} = {
+const tagsToReplace: { [key: string]: string } = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;'
@@ -90,11 +96,11 @@ function safeTagsReplace(str: string): string {
 function overwriteConsole(): void {
     let oldLog = console.log;
     let oldError = console.error;
-    console.log = function() {
+    console.log = function () {
         printToLog([...arguments], false);
         oldLog(...arguments);
     }
-    console.error = function() {
+    console.error = function () {
         printToLog([...arguments], true);
         oldError(...arguments);
     }

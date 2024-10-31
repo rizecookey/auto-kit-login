@@ -1,5 +1,5 @@
 import browser, { WebNavigation } from 'webextension-polyfill'
-import loginUtils from './login_utils'
+import loginUtils from '../common/bridged/login_utils'
 import { getLoginDetector } from '../common/login_detectors';
 import { config, getAutologinPageFilters, PageConfig } from '../common/config';
 import { isSpecialTab, isSpecialWindow } from '../common/bridged/special_tabs';
@@ -33,7 +33,7 @@ async function onVisitAuthenticatablePage(details: NavigationDetails) {
     if (pageDetailsId === undefined) {
         return;
     }
-    if (!pageDetailsId || !await loginUtils.shouldAutoLogin(details.tabId, pageDetailsId)) {
+    if (!pageDetailsId || !await loginUtils.shouldAutoLogin([details.tabId, pageDetailsId])) {
         return;
     }
     let pageDetails = config.pages[pageDetailsId];
@@ -107,7 +107,7 @@ async function onAuthError(error: Error) {
 async function runAuthRedirect(tabId: number, authRedirectData: any, pageDetailsId: string) {
     console.log(`redirecting auth tab back to '${authRedirectData.url}'`);
 
-    loginUtils.setAuthenticationPaused(tabId, pageDetailsId, true);
+    loginUtils.setAuthenticationPaused([tabId, pageDetailsId, true]);
 
     await browser.tabs.update(tabId, {
         url: authRedirectData.url
