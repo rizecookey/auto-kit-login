@@ -1,41 +1,47 @@
 import browser, { WebRequest } from 'webextension-polyfill';
 import { config } from '../common/config';
 import userConfigManager from '../common/user_config';
+import { storage } from '../common/storage';
 
 const logoutUrlFilter = config.filters.logout;
 
-const authenticationPausedTabs = new Map<number, string[]>();
+type AuthenticationPausedMap = { [key: number]: string[] };
+const authenticationPausedMap = storage<AuthenticationPausedMap>('authenticationPausedMap', browser.storage.session, {});
 
-function isAuthenticationPaused(tabId: number, pageDetailsId: string): boolean {
-    return authenticationPausedTabs.has(tabId) && authenticationPausedTabs.get(tabId)?.includes(pageDetailsId) || false;
+async function isAuthenticationPaused(tabId: number, pageDetailsId: string): Promise<boolean> {
+    const authenticationPausedPages = (await authenticationPausedMap.get())[tabId] || [];
+    return authenticationPausedPages.includes(pageDetailsId);
 }
 
-function setAuthenticationPaused(tabId: number, pageDetailsId: string, value: boolean): void {
-    let pausedIds = authenticationPausedTabs.get(tabId) || [];
-    if (value && !pausedIds.includes(pageDetailsId)) {
-        pausedIds.push(pageDetailsId);
-    } else if (!value && pausedIds.includes(pageDetailsId)) {
-        pausedIds = pausedIds.filter(element => element == pageDetailsId);
-    }
+async function setAuthenticationPaused(tabId: number, pageDetailsId: string, value: boolean): Promise<void> {
+    await authenticationPausedMap.with(authenticationPausedMap => {
+        let pausedIds = authenticationPausedMap[tabId] || [];
+        if (value && !pausedIds.includes(pageDetailsId)) {
+            pausedIds.push(pageDetailsId);
+        } else if (!value && pausedIds.includes(pageDetailsId)) {
+            pausedIds = pausedIds.filter(element => element == pageDetailsId);
+        }
 
-    if (pausedIds.length == 0) {
-        authenticationPausedTabs.delete(tabId);
-    } else {
-        authenticationPausedTabs.set(tabId, pausedIds);
-    }
+        if (pausedIds.length == 0) {
+            delete authenticationPausedMap[tabId];
+        } else {
+            authenticationPausedMap[tabId] = pausedIds;
+        }
+        return authenticationPausedMap;
+    });
 }
 
-function clearPausedSites(tabId: number): void {
-    authenticationPausedTabs.delete(tabId);
+async function clearPausedSites(tabId: number): Promise<void> {
+    await authenticationPausedMap.with(authenticationPausedMap => { delete authenticationPausedMap[tabId] });
 }
 
 async function shouldAutoLogin(tabId: number, pageId: string): Promise<boolean> {
     let userConfig = await userConfigManager.get();
-    return userConfig.enabled && userConfig.autologinPages[pageId] && !isAuthenticationPaused(tabId, pageId);
+    return userConfig.enabled && userConfig.autologinPages[pageId] && !(await isAuthenticationPaused(tabId, pageId));
 }
 
 async function onVisitLogoutPage(details: WebRequest.OnResponseStartedDetailsType): Promise<void> {
-    authenticationPausedTabs.clear();
+    await authenticationPausedMap.set({});
 }
 
 browser.webRequest.onResponseStarted.addListener(onVisitLogoutPage, {
