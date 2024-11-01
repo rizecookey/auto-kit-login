@@ -4,9 +4,10 @@ import userConfigManager from '../common/user_config';
 import { getAuthenticator } from './authenticators';
 import { browserType } from '../common/platform';
 import { initBridge } from '../common/bridge/initializer';
+import * as specialTabs from '../common/bridged/special_tabs'
 import loginUtils from '../common/bridged/login_utils'
 
-initBridge('page');
+initBridge('page', [loginUtils, specialTabs]);
 
 const pageParameters = config.extension.pageParameters;
 

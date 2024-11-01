@@ -1,14 +1,18 @@
 import { BridgeEndpoint, setEndpoint } from "./bridge";
-import * as specialTabs from './../bridged/special_tabs'
-import loginUtils from '../bridged/login_utils';
 
-const bridgedFuncs: ((params: any) => any)[] = []
+const bridgedFuncs: ((params: any) => any)[] = [];
 
-function initBridge(endpoint: BridgeEndpoint) {
+type BridgedModule = {
+    bridge(): ((params: any) => any)[]
+}
+
+function initBridge(endpoint: BridgeEndpoint, modules: BridgedModule[]) {
     setEndpoint(endpoint);
 
     // store references to bridged functions to ensure that they are always initialized on both sides
-    bridgedFuncs.push(...specialTabs.bridge(), ...loginUtils.bridge());
+    for (let module of modules) {
+        bridgedFuncs.push(...module.bridge());
+    }
 }
 
 export { initBridge }

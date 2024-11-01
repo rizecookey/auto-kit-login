@@ -1,8 +1,10 @@
 import { initBridge } from '../common/bridge/initializer'
 import autoLogin from './autologin';
 import { browserType } from '../common/platform';
+import * as specialTabs from '../common/bridged/special_tabs';
+import loginUtils from '../common/bridged/login_utils';
 
-initBridge('background');
+initBridge('background', [loginUtils, specialTabs]);
 
 console.log('background script initialized');
 console.log(`platform: ${browserType}`);
