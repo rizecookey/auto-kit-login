@@ -1,7 +1,6 @@
 import browser, { WebNavigation } from "webextension-polyfill";
 import { config, PageConfig } from "../common/config";
 import userConfig from '../common/user_config';
-import { getLoginDetector, LoginDetector } from "../common/login_detectors";
 import { createSpecialWindow, createSpecialTab } from "../common/bridged/special_tabs"
 
 abstract class IdpLoginHandler {
@@ -9,20 +8,16 @@ abstract class IdpLoginHandler {
     protected pageConfig: PageConfig;
     protected loginUrl: URL;
 
-    protected loginDetector: LoginDetector<any>;
-
     constructor(pageId: string, loginUrl: URL) {
         this.pageId = pageId;
         this.pageConfig = config.pages[pageId];
         this.loginUrl = loginUrl;
-
-        this.loginDetector = getLoginDetector(this.pageConfig.loginDetector);
     }
 
     abstract handleLogin(): Promise<void>;
 
-    async isLoggedIn(): Promise<boolean> {
-        return this.loginDetector.isLoggedIn(this.pageConfig.hostname);
+    async isLoggedIn(url: string): Promise<boolean> {
+        return new URL(url).hostname === this.pageConfig.hostname;
     }
 }
 
@@ -39,7 +34,7 @@ class PopupIdpLoginHandler extends IdpLoginHandler {
                     return;
                 }
 
-                if (!(await handler.isLoggedIn())) {
+                if (!(await handler.isLoggedIn(details.url))) {
                     return;
                 }
 
@@ -76,7 +71,7 @@ class TabIdpLoginHandler extends IdpLoginHandler {
 
         return await new Promise<void>((resolve, reject) => {
             async function onNavigateInTab(details: WebNavigation.OnCommittedDetailsType) {
-                if (details.tabId != tab.id || !(await handler.isLoggedIn())) {
+                if (details.tabId != tab.id || !(await handler.isLoggedIn(details.url))) {
                     return;
                 }
 
