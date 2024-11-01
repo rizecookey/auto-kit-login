@@ -18,6 +18,8 @@ let redirectTo: URL | null;
 
 let errorDiv: HTMLElement | null;
 
+let tabId: number | null;
+
 async function start() {
     await setup();
     try {
@@ -46,6 +48,8 @@ async function setup(): Promise<void> {
 
     let url = new URL(window.location.href);
 
+    tabId = (await browser.tabs.getCurrent())?.id || null;
+
     pageDetailsId = url.searchParams.get(pageParameters.pageDetailsId)!!;
     let pageDetails = config.pages[pageDetailsId];
 
@@ -66,31 +70,14 @@ async function setup(): Promise<void> {
         };
         newUserConfig.autologinPages[pageDetailsId!!] = false;
         await userConfigManager.set(newUserConfig);
-        location.href = redirectTo!!.toString();
+        location.replace(redirectTo!!.toString());
         return true;
     };
     document.getElementById('pause')!!.onclick = async function () {
-        await loginUtils.setAuthenticationPaused([(await browser.tabs.getCurrent())?.id!!, Object.keys(config.pages), true]);
-        location.href = redirectTo!!.toString();
+        await loginUtils.setAuthenticationPaused([tabId!!, Object.keys(config.pages), true]);
+        location.replace(redirectTo!!.toString());
         return true;
     };
-}
-
-const tagsToReplace: { [key: string]: string } = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;'
-};
-
-function replaceTag(tag: string): string {
-    return tagsToReplace[tag] || tag;
-}
-
-function safeTagsReplace(str: string): string {
-    if (!str) {
-        return str;
-    }
-    return `${str}`.replace(/[&<>]/g, replaceTag);
 }
 
 function overwriteConsole(): void {
@@ -141,18 +128,13 @@ async function makeLoginRequest(pageUrl: URL) {
     await authenticator.authenticate(pageUrl);
 
     console.log('logged in, redirecting back');
-    redirectBack();
+    await redirectBack();
 }
 
-function redirectBack() {
-    browser.runtime.sendMessage({
-        auth: {
-            redirect: {
-                url: redirectTo?.toString()
-            },
-            pageDetailsId: pageDetailsId
-        }
-    });
+async function redirectBack() {
+    await loginUtils.setAuthenticationPaused([tabId!!, pageDetailsId!!, true]);
+    await browser.runtime.sendMessage({ auth: { success: true } })
+    location.replace(redirectTo!!.toString());
 }
 
 start();

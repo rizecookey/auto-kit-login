@@ -87,31 +87,20 @@ async function redirectAndAuthenticate(tabId: number, pageDetailsId: string, ori
 }
 
 async function onAuthRequest(sender: browser.Runtime.MessageSender, data: any): Promise<void> {
-    if (data.redirect) {
-        if (sender.tab?.id === undefined) {
-            return;
-        }
-        await runAuthRedirect(sender.tab.id, data.redirect, data.pageDetailsId);
-        return;
-    }
-
     if (data.error) {
-        await onAuthError(data.error);
+        await onAuthError(sender, data.error);
+    }
+    if (data.success) {
+        await onAuthSuccess(sender);
     }
 }
 
-async function onAuthError(error: Error) {
-    console.log(`authenticator tab reported error: ${error.message}`);
+async function onAuthError(sender: browser.Runtime.MessageSender, error: Error) {
+    console.log(`authenticator tab ${sender.tab} reported error: ${error.message}`);
 }
 
-async function runAuthRedirect(tabId: number, authRedirectData: any, pageDetailsId: string) {
-    console.log(`redirecting auth tab back to '${authRedirectData.url}'`);
-
-    loginUtils.setAuthenticationPaused([tabId, pageDetailsId, true]);
-
-    await browser.tabs.update(tabId, {
-        url: authRedirectData.url
-    });
+async function onAuthSuccess(sender: browser.Runtime.MessageSender) {
+    console.log(`authenticator tab ${sender.tab} completed successfully`);
 }
 
 function registerListeners() {
