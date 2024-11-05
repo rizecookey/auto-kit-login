@@ -4,6 +4,7 @@ import esbuild from 'esbuild'
 import { argv } from 'process';
 import { sassPlugin } from 'esbuild-sass-plugin'
 import webExt from 'web-ext'
+import { globSync } from 'glob'
 
 const PLATFORM_SRC = 'platform_src/';
 const SRC_DIR = 'src/';
@@ -17,11 +18,9 @@ const FINAL_FILES = [
     "authenticator/authenticating.css",
     "authenticator/authentication.ts",
     "background/background.ts",
-    "content/auto_submit.ts",
+    "content/**/*",
     "common_style.scss",
-    "popup/popup.ts",
-    "popup/popup.html",
-    "popup/popup.css",
+    "popup/popup.*",
     "manifest.json",
     "kit_cookie.png"
 ];
@@ -104,7 +103,7 @@ function expandManifest(manifestFile, expansions) {
 async function bundle(srcDir, finalFiles, outDir) {
     logBuildStep('bundling', `${srcDir}`);
     await esbuild.build({
-        entryPoints: finalFiles.map(file => path.join(srcDir, file)),
+        entryPoints: globSync(finalFiles, { cwd: srcDir, nodir: true }).map(file => path.join(srcDir, file)),
         minify: mode == 'release' ? true : false,
         bundle: true,
         platform: 'browser',
