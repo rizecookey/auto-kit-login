@@ -1,5 +1,5 @@
 import browser, { Tabs, Windows } from 'webextension-polyfill';
-import { bridged } from '../bridge/bridge';
+import { bridged, BridgeEndpoint } from '../bridge/bridge';
 import { storage } from '../storage';
 
 const specialTabs = storage<number[]>('specialTabs', browser.storage.session, []);
@@ -35,15 +35,17 @@ const isSpecialWindow = bridged(bridgedFuncs, 'background', 'isSpecialWindow', a
     return (await specialWindows.get()).includes(windowId);
 });
 
-function bridge() {
-    browser.tabs.onRemoved.addListener(tabId => {
-        specialTabs.with(value => value.filter(id => id != tabId));
-    });
-
-    if (browser.windows !== undefined) {
-        browser.windows.onRemoved.addListener(windowId => {
-            specialWindows.with(value => value.filter(id => id != windowId));
+function bridge(endpoint: BridgeEndpoint) {
+    if (endpoint === 'background') {
+        browser.tabs.onRemoved.addListener(tabId => {
+            specialTabs.with(value => value.filter(id => id != tabId));
         });
+
+        if (browser.windows !== undefined) {
+            browser.windows.onRemoved.addListener(windowId => {
+                specialWindows.with(value => value.filter(id => id != windowId));
+            });
+        }
     }
 
     return bridgedFuncs;

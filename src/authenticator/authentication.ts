@@ -23,6 +23,7 @@ let tabId: number | null;
 
 async function start() {
     await setup();
+    await loginUtils.setLoggedIn([pageDetailsId!!, false]);
     try {
         await makeLoginRequest(loginPage!!);
     } catch (error) {
@@ -133,7 +134,7 @@ async function makeLoginRequest(pageUrl: URL) {
 }
 
 async function redirectBack() {
-    await loginUtils.setAuthenticationPaused([tabId!!, pageDetailsId!!, true]);
+    await loginUtils.setLoggedIn([pageDetailsId!!, true]);
     await browser.runtime.sendMessage({ auth: { success: true } })
     location.replace(redirectTo!!.toString());
 }

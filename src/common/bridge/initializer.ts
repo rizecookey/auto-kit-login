@@ -3,7 +3,7 @@ import { BridgeEndpoint, setEndpoint } from "./bridge";
 const bridgedFuncs: ((params: any) => any)[] = [];
 
 type BridgedModule = {
-    bridge(): ((params: any) => any)[]
+    bridge(endpoint: BridgeEndpoint): ((params: any) => any)[]
 }
 
 function initBridge(endpoint: BridgeEndpoint, modules: BridgedModule[]) {
@@ -11,7 +11,7 @@ function initBridge(endpoint: BridgeEndpoint, modules: BridgedModule[]) {
 
     // store references to bridged functions to ensure that they are always initialized on both sides
     for (let module of modules) {
-        bridgedFuncs.push(...module.bridge());
+        bridgedFuncs.push(...module.bridge(endpoint));
     }
 }
 
