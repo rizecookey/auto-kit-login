@@ -13,18 +13,15 @@ const pageParameters = config.extension.pageParameters;
 
 async function onVisitAuthenticatablePage(details: NavigationDetails): Promise<boolean> {
     if (details.documentLifecycle == 'prerender') {
-        console.log("failed prerender")
         return false;
     }
 
     let tab = await browser.tabs.get(details.tabId);
     if (await isSpecialTab(details.tabId)) {
-        console.log("failed 1st")
         return false;
     }
 
     if (browser.windows !== undefined && tab.windowId !== undefined && await isSpecialWindow(tab.windowId)) {
-        console.log("failed 2nd")
         return false;
     }
 
@@ -32,7 +29,6 @@ async function onVisitAuthenticatablePage(details: NavigationDetails): Promise<b
     let domain = url.hostname;
     let [pageDetailsId, pageDetails] = findPageDetailsForDomain(domain);
     if (pageDetailsId === undefined || pageDetails === undefined || !await loginUtils.shouldAutoLogin([details.tabId, pageDetailsId])) {
-        console.log("failed 3rd")
         return false;
     }
 
