@@ -68,7 +68,10 @@ const shouldAutoLogin = bridged(bridgedFuncs, 'background', 'shouldAutoLogin', a
 
 function bridge(endpoint: BridgeEndpoint) {
     if (endpoint == 'background') {
-        browser.webRequest.onCompleted.addListener(async _ => await loggedInPages.set([]), { urls: [logoutUrlFilter] });
+        browser.webRequest.onCompleted.addListener(async details => {
+            await loggedInPages.set([]);
+            await setAuthenticationPaused([details.tabId, Object.keys(config.pages), true]);
+        }, { urls: [logoutUrlFilter] });
         browser.webRequest.onCompleted.addListener(async details => {
             const [pageId, pageDetails] = findPageDetailsForDomain(new URL(details.url).hostname);
             if (pageId === undefined || pageDetails === undefined) {
