@@ -1,5 +1,5 @@
-import browser from 'webextension-polyfill';
-import { config } from '../config';
+import browser, { Cookies, cookies } from 'webextension-polyfill';
+import { config, findPageDetailsForDomain, getLogoutUrlFilters } from '../config';
 import userConfigManager from '../user_config';
 import { storage } from '../storage';
 import { bridged, BridgeEndpoint } from '../bridge/bridge';
@@ -10,7 +10,7 @@ const logoutUrlFilter = config.filters.logout;
 
 type AuthenticationPausedMap = { [key: number]: string[] };
 const authenticationPausedMap = storage<AuthenticationPausedMap>('authenticationPausedMap', browser.storage.session, {});
-const loggedInPages = storage<string[]>('loggedInPages', browser.storage.session, []);
+const loggedInPages = storage<[string, number][]>('loggedInPages', browser.storage.session, []);
 
 const isAuthenticationPaused = bridged(bridgedFuncs, 'background', 'isAuthenticationPaused', async function ([tabId, pageDetailsId]: [number, string]): Promise<boolean> {
     const authenticationPausedPages = (await authenticationPausedMap.get())[tabId] || [];
@@ -43,32 +43,45 @@ const clearPausedSites = bridged(bridgedFuncs, 'background', 'clearPausedSites',
 });
 
 const isLoggedIn = bridged(bridgedFuncs, 'background', 'isLoggedIn', async function (pageId: string): Promise<boolean> {
-    return (await loggedInPages.get()).includes(pageId);
+    return (await loggedInPages.get()).some(([id, _]) => pageId === id);
+});
+
+const getLastLoginTime = bridged(bridgedFuncs, 'background', 'getLastLoginTime', async function (pageId: string): Promise<number | undefined> {
+    return ((await loggedInPages.get()).find(([id, _]) => id === pageId) || [undefined, undefined])[1];
 });
 
 const setLoggedIn = bridged(bridgedFuncs, 'background', 'setLoggedIn', async function ([pageId, loggedIn]: [string, boolean]): Promise<void> {
     return await loggedInPages.with(value => {
-        if (loggedIn && !value.includes(pageId)) {
-            value.push(pageId);
+        if (loggedIn && !value.some(([id, _]) => id === pageId)) {
+            value.push([pageId, Date.now()]);
         } else if (!loggedIn) {
-            value = value.filter(id => id !== pageId);
+            value = value.filter(([id, _]) => id !== pageId);
         }
         return value;
     });
-})
+});
 
 const shouldAutoLogin = bridged(bridgedFuncs, 'background', 'shouldAutoLogin', async function ([tabId, pageId]: [number, string]): Promise<boolean> {
     let userConfig = await userConfigManager.get();
-    return userConfig.enabled && userConfig.autologinPages[pageId] && !await isLoggedIn(pageId) && !(await isAuthenticationPaused([tabId, pageId]));
+    return userConfig.enabled && userConfig.autologinPages[pageId] && !(await isAuthenticationPaused([tabId, pageId]));
 });
 
 function bridge(endpoint: BridgeEndpoint) {
     if (endpoint == 'background') {
         browser.webRequest.onCompleted.addListener(async _ => await loggedInPages.set([]), { urls: [logoutUrlFilter] });
+        browser.webRequest.onCompleted.addListener(async details => {
+            const [pageId, pageDetails] = findPageDetailsForDomain(new URL(details.url).hostname);
+            if (pageId === undefined || pageDetails === undefined) {
+                return;
+            }
+
+            await setLoggedIn([pageId, false]);
+            await setAuthenticationPaused([details.tabId, pageId, true]);
+        }, getLogoutUrlFilters());
         browser.tabs.onRemoved.addListener((tabId, _) => clearPausedSites(tabId));
     }
 
     return bridgedFuncs;
 }
 
-export default { bridge, setAuthenticationPaused, clearPausedSites, shouldAutoLogin, isLoggedIn, setLoggedIn }
+export default { bridge, setAuthenticationPaused, clearPausedSites, shouldAutoLogin, isLoggedIn, getLastLoginTime, setLoggedIn }

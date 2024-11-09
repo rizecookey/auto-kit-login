@@ -18,7 +18,7 @@ const FINAL_FILES = [
     "authenticator/authenticating.css",
     "authenticator/authentication.ts",
     "background/background.ts",
-    "content/**/*",
+    "content/**/[!helper.ts]*",
     "common_style.scss",
     "popup/popup.*",
     "manifest.json",

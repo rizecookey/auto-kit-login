@@ -55,7 +55,7 @@ async function setup(): Promise<void> {
     pageDetailsId = url.searchParams.get(pageParameters.pageDetailsId)!!;
     let pageDetails = config.pages[pageDetailsId];
 
-    loginPage = pageDetails.loginPage;
+    loginPage = pageDetails.loginUrl;
     authenticatorType = pageDetails.authenticator;
     redirectTo = new URL(url.searchParams.get(pageParameters.redirect)!!);
 

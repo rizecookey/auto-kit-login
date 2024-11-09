@@ -1,10 +1,13 @@
+import browser from 'webextension-polyfill'
 import { initBridge } from '../common/bridge/initializer'
 import autoLogin from './autologin';
 import { browserType } from '../common/platform';
 import * as specialTabs from '../common/bridged/special_tabs';
 import loginUtils from '../common/bridged/login_utils';
+import * as backgroundFetch from '../common/bridged/background_fetch'
 
-initBridge('background', [loginUtils, specialTabs]);
+initBridge('background', [loginUtils, specialTabs, backgroundFetch]);
+(browser.storage.session as any).setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
 
 console.log('background script initialized');
 console.log(`platform: ${browserType}`);

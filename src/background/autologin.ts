@@ -1,13 +1,11 @@
 import browser, { WebNavigation } from 'webextension-polyfill'
 import loginUtils from '../common/bridged/login_utils'
 import { getLoginDetector } from '../common/login_detectors';
-import { config, getAutologinPageFilters, PageConfig } from '../common/config';
+import { config, findPageDetailsForDomain, getAutologinPageFilters, PageConfig } from '../common/config';
 import { isSpecialTab, isSpecialWindow } from '../common/bridged/special_tabs';
 
 // stupid chrome prerendering
 type NavigationDetails = WebNavigation.OnBeforeNavigateDetailsType & { documentLifecycle?: string };
-
-const AUTHENTICATION_EXT_PAGE = "authenticator/authenticating.html";
 
 const idpUrl = config.idpUrl;
 const autologinPageFilters = getAutologinPageFilters();
@@ -29,37 +27,38 @@ async function onVisitAuthenticatablePage(details: NavigationDetails) {
 
     let url = new URL(details.url);
     let domain = url.hostname;
-    let pageDetailsId = findMatchingPageDetailsId(domain);
-    if (pageDetailsId === undefined) {
+    let [pageDetailsId, pageDetails] = findPageDetailsForDomain(domain);
+    if (pageDetailsId === undefined || pageDetails === undefined || !await loginUtils.shouldAutoLogin([details.tabId, pageDetailsId])) {
         return;
     }
-    if (!pageDetailsId || !await loginUtils.shouldAutoLogin([details.tabId, pageDetailsId])) {
-        return;
-    }
-    let pageDetails = config.pages[pageDetailsId];
 
-    if (!await isLoggedIn(domain, pageDetails)) {
+    if (!await isLoggedIn(domain, pageDetailsId, pageDetails)) {
         await clearPreviousCookies();
         await redirectAndAuthenticate(details.tabId, pageDetailsId, new URL(details.url));
     }
 }
 
-function findMatchingPageDetailsId(domain: string): string | undefined {
-    let pageIdFound: string | undefined;
-
-    for (let pageId in config.pages) {
-        let page = config.pages[pageId];
-        if (domain.includes(page.hostname)) {
-            pageIdFound = pageId;
-        }
+async function injectSessionTimeoutDetectors(details: WebNavigation.OnDOMContentLoadedDetailsType) {
+    const [pageId, pageDetails] = findPageDetailsForDomain(new URL(details.url).hostname);
+    if (pageId === undefined || pageDetails == undefined) {
+        return;
+    }
+    /*if (!await loginUtils.shouldAutoLogin([details.tabId, pageId])) {
+        return;
+    }*/ // TODO
+    if (!pageDetails.sessionTimeoutDetectors) {
+        return;
     }
 
-    return pageIdFound;
+    browser.scripting.executeScript({
+        files: pageDetails.sessionTimeoutDetectors.map(file => `${config.extension.sessionTimeoutDetectorsDir}/${file}.js`),
+        target: { tabId: details.tabId }
+    });
 }
 
-async function isLoggedIn(domain: string, pageDetails: PageConfig): Promise<boolean> {
+async function isLoggedIn(domain: string, pageId: string, pageDetails: PageConfig): Promise<boolean> {
     let loginDetectorConfig = pageDetails.loginDetector;
-    let loginDetector = getLoginDetector(loginDetectorConfig);
+    let loginDetector = getLoginDetector(pageId, loginDetectorConfig);
 
     return await loginDetector.isLoggedIn(domain);
 }
@@ -81,7 +80,7 @@ async function redirectAndAuthenticate(tabId: number, pageDetailsId: string, ori
     params.append(pageParameters.redirect, originalPage.toString());
     params.append(pageParameters.pageDetailsId, pageDetailsId)
     browser.tabs.update(tabId, {
-        url: `${AUTHENTICATION_EXT_PAGE}?${params.toString()}`
+        url: `${config.extension.authenticationPage}?${params.toString()}`
     });
     console.log('starting authentication on tab ' + tabId);
 }
@@ -96,11 +95,19 @@ async function onAuthRequest(sender: browser.Runtime.MessageSender, data: any): 
 }
 
 async function onAuthError(sender: browser.Runtime.MessageSender, error: Error) {
-    console.log(`authenticator tab ${sender.tab} reported error: ${error.message}`);
+    console.log(`authenticator tab ${sender.tab?.id} reported error: ${error.message}`);
 }
 
 async function onAuthSuccess(sender: browser.Runtime.MessageSender) {
-    console.log(`authenticator tab ${sender.tab} completed successfully`);
+    console.log(`authenticator tab ${sender.tab?.id} completed successfully`);
+}
+
+async function onSessionTimeoutDetectorRequest(data: any, sender: browser.Runtime.MessageSender) {
+    if (data.redirect) {
+        await browser.tabs.update(sender.tab?.id, {
+            url: data.redirect,
+        });
+    }
 }
 
 function registerListeners() {
@@ -109,12 +116,16 @@ function registerListeners() {
     browser.webNavigation.onBeforeNavigate.addListener(details => {
         let activePromise = activeVisitListenersPerTab.get(details.tabId) || Promise.resolve();
         activeVisitListenersPerTab.set(details.tabId, activePromise.then(() => onVisitAuthenticatablePage(details)));
-    }, { url: autologinPageFilters });
+    }, autologinPageFilters);
+    browser.webNavigation.onDOMContentLoaded.addListener(details => injectSessionTimeoutDetectors(details), autologinPageFilters);
     browser.tabs.onRemoved.addListener(tabId => activeVisitListenersPerTab.delete(tabId));
 
     browser.runtime.onMessage.addListener((request: any, sender, _) => {
         if (request.auth) {
             onAuthRequest(sender, request.auth);
+        }
+        if (request.sessionTimeoutDetector) {
+            onSessionTimeoutDetectorRequest(request.sessionTimeoutDetector, sender);
         }
         return undefined;
     });
