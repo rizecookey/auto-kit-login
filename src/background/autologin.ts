@@ -5,37 +5,43 @@ import { config, findPageDetailsForDomain, getAutologinPageFilters, PageConfig }
 import { isSpecialTab, isSpecialWindow } from '../common/bridged/special_tabs';
 
 // stupid chrome prerendering
-type NavigationDetails = WebNavigation.OnBeforeNavigateDetailsType & { documentLifecycle?: string };
+type NavigationDetails = WebNavigation.OnCommittedDetailsType & { documentLifecycle?: string };
 
 const idpUrl = config.idpUrl;
 const autologinPageFilters = getAutologinPageFilters();
 const pageParameters = config.extension.pageParameters;
 
-async function onVisitAuthenticatablePage(details: NavigationDetails) {
+async function onVisitAuthenticatablePage(details: NavigationDetails): Promise<boolean> {
     if (details.documentLifecycle == 'prerender') {
-        return;
+        console.log("failed prerender")
+        return false;
     }
 
     let tab = await browser.tabs.get(details.tabId);
     if (await isSpecialTab(details.tabId)) {
-        return;
+        console.log("failed 1st")
+        return false;
     }
 
     if (browser.windows !== undefined && tab.windowId !== undefined && await isSpecialWindow(tab.windowId)) {
-        return;
+        console.log("failed 2nd")
+        return false;
     }
 
     let url = new URL(details.url);
     let domain = url.hostname;
     let [pageDetailsId, pageDetails] = findPageDetailsForDomain(domain);
     if (pageDetailsId === undefined || pageDetails === undefined || !await loginUtils.shouldAutoLogin([details.tabId, pageDetailsId])) {
-        return;
+        console.log("failed 3rd")
+        return false;
     }
 
     if (!await isLoggedIn(domain, pageDetailsId, pageDetails)) {
         await clearPreviousCookies();
         await redirectAndAuthenticate(details.tabId, pageDetailsId, new URL(details.url));
+        return true;
     }
+    return false;
 }
 
 async function injectSessionTimeoutDetectors(details: WebNavigation.OnDOMContentLoadedDetailsType) {
@@ -106,13 +112,22 @@ async function onSessionTimeoutDetectorRequest(data: any, sender: browser.Runtim
 
 function registerListeners() {
     // ensure visit listeners are always fully executed one after another
-    let activeVisitListenersPerTab = new Map();
-    browser.webNavigation.onBeforeNavigate.addListener(details => {
-        let activePromise = activeVisitListenersPerTab.get(details.tabId) || Promise.resolve();
-        activeVisitListenersPerTab.set(details.tabId, activePromise.then(() => onVisitAuthenticatablePage(details)));
+    let tabNavigationListeners = new Map<number, Promise<boolean>>();
+    browser.webNavigation.onCommitted.addListener(details => {
+        let activePromise = tabNavigationListeners.get(details.tabId) || Promise.resolve(false);
+        tabNavigationListeners.set(details.tabId, activePromise.then(async shortCircuit => {
+            if (shortCircuit) {
+                return true;
+            }
+            let newResult = await onVisitAuthenticatablePage(details);
+            if (newResult) {
+                tabNavigationListeners.delete(details.tabId);
+            }
+            return newResult;
+        }));
     }, autologinPageFilters);
     browser.webNavigation.onDOMContentLoaded.addListener(details => injectSessionTimeoutDetectors(details), autologinPageFilters);
-    browser.tabs.onRemoved.addListener(tabId => activeVisitListenersPerTab.delete(tabId));
+    browser.tabs.onRemoved.addListener(tabId => tabNavigationListeners.delete(tabId));
 
     browser.runtime.onMessage.addListener((request: any, sender, _) => {
         if (request.auth) {
