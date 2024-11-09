@@ -40,13 +40,7 @@ async function onVisitAuthenticatablePage(details: NavigationDetails) {
 
 async function injectSessionTimeoutDetectors(details: WebNavigation.OnDOMContentLoadedDetailsType) {
     const [pageId, pageDetails] = findPageDetailsForDomain(new URL(details.url).hostname);
-    if (pageId === undefined || pageDetails == undefined) {
-        return;
-    }
-    /*if (!await loginUtils.shouldAutoLogin([details.tabId, pageId])) {
-        return;
-    }*/ // TODO
-    if (!pageDetails.sessionTimeoutDetectors) {
+    if (pageId === undefined || pageDetails == undefined || !await loginUtils.shouldAutoLogin([details.tabId, pageId]) || !pageDetails.sessionTimeoutDetectors) {
         return;
     }
 
