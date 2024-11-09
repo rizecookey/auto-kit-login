@@ -15,7 +15,9 @@ async function setup(): Promise<void> {
 
     async function onPotentialPasswordInput() {
         if (passwordField!!.value.length !== 0 && await shouldAutoSubmit()) {
-            submitButton!!.click();
+            setTimeout(() => {
+                submitButton!!.click();
+            }, 50);
         }
     }
 
