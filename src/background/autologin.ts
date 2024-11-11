@@ -5,7 +5,7 @@ import { config, findPageDetailsForDomain, getAutologinPageFilters, PageConfig }
 import { isSpecialTab, isSpecialWindow } from '../common/bridged/special_tabs';
 
 // stupid chrome prerendering
-type NavigationDetails = WebNavigation.OnCommittedDetailsType & { documentLifecycle?: string };
+type NavigationDetails = WebNavigation.OnBeforeNavigateDetailsType & { documentLifecycle?: string };
 
 const idpUrl = config.idpUrl;
 const autologinPageFilters = getAutologinPageFilters();
@@ -109,7 +109,7 @@ async function onSessionTimeoutDetectorRequest(data: any, sender: browser.Runtim
 function registerListeners() {
     // ensure visit listeners are always fully executed one after another
     let tabNavigationListeners = new Map<number, Promise<boolean>>();
-    browser.webNavigation.onCommitted.addListener(details => {
+    browser.webNavigation.onBeforeNavigate.addListener(details => {
         let activePromise = tabNavigationListeners.get(details.tabId) || Promise.resolve(false);
         tabNavigationListeners.set(details.tabId, activePromise.then(async shortCircuit => {
             if (shortCircuit) {
