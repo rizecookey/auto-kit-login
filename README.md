@@ -26,9 +26,9 @@ click the settings icon for the Auto KIT Login addon and select "Manage extensio
 has the permission to access sites with the kit.edu domain.
 
 ### Chrome (and Chromium-based browsers)
-Download the `auto-kit-login-<version>-chrome.zip` file from the [releases page](https://github.com/rizecookey/auto-kit-login/releases/latest).
-Extract the .zip file in a known location. Navigate to the extensions page in your browser (`chrome://extensions` for Chrome) and enable developer mode.
-Click on "Load unpacked" and select the directory in which you extracted the zip file (the folder should contain directories called "background" etc...).
+Auto KIT Login is now available on the [Chrome Web Store](https://chromewebstore.google.com/detail/auto-kit-login/imfiidhodlkjndchpdjmpflgbknfalfc).
+
+If you want to install it manually, you can download the `auto-kit-login-<version>-chrome.crx` file from the [release page](https://github.com/rizecookey/auto-kit-login/releases/latest), open the extensions overview in your Chromium browser and drag-and-drop the file from your file manager into the overview to install it.
 
 ## Usage
 Whenever you visit a supported KIT page, the extension will try to determine whether you're currently logged in. If you are not, it will then automatically redirect
