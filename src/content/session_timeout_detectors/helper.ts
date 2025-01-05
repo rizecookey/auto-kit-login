@@ -16,7 +16,7 @@ function performAuthRedirection() {
 
     browser.runtime.sendMessage({
         sessionTimeoutDetector: {
-            redirect: browser.runtime.getURL(`${config.extension.authenticationPage}?${params.toString()}`)
+            redirect: true
         }
     });
 }

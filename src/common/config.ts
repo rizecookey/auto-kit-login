@@ -183,6 +183,18 @@ function getAutologinPageFilters(): WebNavigation.EventUrlFilters {
     return { url: filters };
 }
 
+function getAutologinRequestFilters(): WebRequest.RequestFilter {
+    let filters: string[] = [];
+    for (let page in config.pages) {
+        filters.push(`*://${config.pages[page].hostname}/*`);
+    }
+
+    return {
+        urls: filters,
+        types: ['main_frame']
+    }
+}
+
 function getLogoutUrlFilters(): WebRequest.RequestFilter {
     return { urls: Object.values(config.pages).filter(page => page.logoutUrl !== undefined).map(page => page.logoutUrl!!.toString()) };
 }
@@ -200,4 +212,4 @@ function findPageDetailsForDomain(domain: string): [string, PageConfig] | [undef
     return found;
 }
 
-export { config, getAutologinPageFilters, getLogoutUrlFilters, findPageDetailsForDomain, AuthenticatorType, LoginDetectorConfig, CookieLoginDetectorConfig, ApiRequestLoginDetectorConfig, IsRedirectedLoginDetectorConfig, PageConfig, Config, LoginWindowType }
+export { config, getAutologinPageFilters, getAutologinRequestFilters, getLogoutUrlFilters, findPageDetailsForDomain, AuthenticatorType, LoginDetectorConfig, CookieLoginDetectorConfig, ApiRequestLoginDetectorConfig, IsRedirectedLoginDetectorConfig, PageConfig, Config, LoginWindowType }

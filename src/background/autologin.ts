@@ -1,7 +1,7 @@
-import browser, { WebNavigation } from 'webextension-polyfill'
+import browser, { WebNavigation, WebRequest } from 'webextension-polyfill'
 import loginUtils from '../common/bridged/login_utils'
 import { getLoginDetector } from '../common/login_detectors';
-import { config, findPageDetailsForDomain, getAutologinPageFilters, PageConfig } from '../common/config';
+import { config, findPageDetailsForDomain, getAutologinPageFilters, getAutologinRequestFilters, PageConfig } from '../common/config';
 import { isSpecialTab, isSpecialWindow } from '../common/bridged/special_tabs';
 
 // stupid chrome prerendering
@@ -9,6 +9,7 @@ type NavigationDetails = WebNavigation.OnBeforeNavigateDetailsType & { documentL
 
 const idpUrl = config.idpUrl;
 const autologinPageFilters = getAutologinPageFilters();
+const autologinRequestFilters = getAutologinRequestFilters();
 const pageParameters = config.extension.pageParameters;
 
 async function onVisitAuthenticatablePage(details: NavigationDetails): Promise<boolean> {
@@ -38,18 +39,6 @@ async function onVisitAuthenticatablePage(details: NavigationDetails): Promise<b
         return true;
     }
     return false;
-}
-
-async function injectSessionTimeoutDetectors(details: WebNavigation.OnDOMContentLoadedDetailsType) {
-    const [pageId, pageDetails] = findPageDetailsForDomain(new URL(details.url).hostname);
-    if (pageId === undefined || pageDetails == undefined || !await loginUtils.shouldAutoLogin([details.tabId, pageId]) || !pageDetails.sessionTimeoutDetectors) {
-        return;
-    }
-
-    browser.scripting.executeScript({
-        files: pageDetails.sessionTimeoutDetectors.map(file => `${config.extension.sessionTimeoutDetectorsDir}/${file}.js`),
-        target: { tabId: details.tabId }
-    });
 }
 
 async function isLoggedIn(domain: string, pageId: string, pageDetails: PageConfig): Promise<boolean> {
@@ -98,12 +87,50 @@ async function onAuthSuccess(sender: browser.Runtime.MessageSender) {
     console.log(`authenticator tab ${sender.tab?.id} completed successfully`);
 }
 
-async function onSessionTimeoutDetectorRequest(data: any, sender: browser.Runtime.MessageSender) {
-    if (data.redirect) {
-        await browser.tabs.update(sender.tab?.id, {
-            url: data.redirect,
-        });
+async function injectSessionTimeoutDetectors(details: WebNavigation.OnDOMContentLoadedDetailsType) {
+    const [pageId, pageDetails] = findPageDetailsForDomain(new URL(details.url).hostname);
+    if (pageId === undefined || pageDetails == undefined || !await loginUtils.shouldAutoLogin([details.tabId, pageId]) || !pageDetails.sessionTimeoutDetectors) {
+        return;
     }
+
+    browser.scripting.executeScript({
+        files: pageDetails.sessionTimeoutDetectors.map(file => `${config.extension.sessionTimeoutDetectorsDir}/${file}.js`),
+        target: { tabId: details.tabId }
+    });
+}
+
+type DirectNavigationTargetInfo = {
+    requestId: string,
+    url: URL
+}
+const lastDirectNavigationTargets = new Map<number, DirectNavigationTargetInfo>();
+function onUserNavigation(details: WebRequest.OnBeforeRequestDetailsType): void {
+    if (details.tabId == -1) {
+        return;
+    }
+
+    const current = lastDirectNavigationTargets.get(details.tabId);
+    if (current?.requestId == details.requestId) {
+        return;
+    }
+
+    lastDirectNavigationTargets.set(details.tabId, {
+        requestId: details.requestId,
+        url: new URL(details.url)
+    });
+}
+
+async function onSessionTimeoutDetectorRequest(data: any, sender: browser.Runtime.MessageSender) {
+    if (!data.redirect || sender.tab?.id == undefined || !lastDirectNavigationTargets.has(sender.tab.id)) {
+        return;
+    }
+
+    const { url } = lastDirectNavigationTargets.get(sender.tab.id)!!;
+    const [pageDetailsId, _] = findPageDetailsForDomain(url.hostname);
+    if (pageDetailsId == undefined) {
+        return;
+    }
+    await redirectAndAuthenticate(sender.tab.id, pageDetailsId, url);
 }
 
 function registerListeners() {
@@ -122,8 +149,17 @@ function registerListeners() {
             return newResult;
         }));
     }, autologinPageFilters);
+
+    browser.webRequest.onBeforeRequest.addListener(details => {
+        onUserNavigation(details);
+        return undefined;
+    }, autologinRequestFilters)
+
     browser.webNavigation.onDOMContentLoaded.addListener(details => injectSessionTimeoutDetectors(details), autologinPageFilters);
-    browser.tabs.onRemoved.addListener(tabId => tabNavigationListeners.delete(tabId));
+    browser.tabs.onRemoved.addListener(tabId => {
+        tabNavigationListeners.delete(tabId);
+        lastDirectNavigationTargets.delete(tabId);
+    });
 
     browser.runtime.onMessage.addListener((request: any, sender, _) => {
         if (request.auth) {
