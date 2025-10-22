@@ -113,7 +113,7 @@ async function bundle(srcDir, finalFiles, outDir) {
             '.json': 'copy',
             '.ttf': 'copy'
         },
-        plugins: [sassPlugin({ silenceDeprecations: ['import', 'global-builtin', 'mixed-decls', 'color-functions'] })], // deprecations caused by bootstrap
+        plugins: [sassPlugin({ silenceDeprecations: ['import', 'global-builtin', 'color-functions'] })], // deprecations caused by bootstrap
         outbase: srcDir,
         outdir: outDir
     });

@@ -1,6 +1,6 @@
 {
   "name": "auto-kit-login",
-  "version": "1.2.3",
+  "version": "1.2.4-SNAPSHOT",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -26,10 +26,10 @@
   "description": "Automatic login redirection on supported KIT pages.",
   "devDependencies": {
     "@types/bootstrap": "^5.2.10",
-    "@types/webextension-polyfill": "^0.12.3",
+    "@types/webextension-polyfill": "^0.12.4",
     "autoprefixer": "^10.4.21",
     "css-loader": "^7.1.2",
-    "esbuild": "^0.25.10",
+    "esbuild": "^0.25.11",
     "esbuild-sass-plugin": "^3.3.1",
     "fs-extra": "^11.3.2",
     "glob": "^11.0.3",
@@ -37,7 +37,7 @@
     "sass": "^1.85.1",
     "sass-loader": "^16.0.5",
     "style-loader": "^4.0.0",
-    "typescript": "^5.9.2",
+    "typescript": "^5.9.3",
     "web-ext": "^8.10.0",
     "webextension-polyfill": "^0.12.0"
   },

@@ -1,4 +1,4 @@
-import browser, { WebNavigation, WebRequest } from 'webextension-polyfill'
+import browser, { Runtime, WebNavigation, WebRequest } from 'webextension-polyfill'
 import loginUtils from '../common/bridged/login_utils'
 import { getLoginDetector } from '../common/login_detectors';
 import { config, findPageDetailsForDomain, getAutologinPageFilters, getAutologinRequestFilters, PageConfig } from '../common/config';
@@ -161,14 +161,14 @@ function registerListeners() {
         lastDirectNavigationTargets.delete(tabId);
     });
 
-    browser.runtime.onMessage.addListener((request: any, sender, _) => {
+    browser.runtime.onMessage.addListener((request: any, sender: Runtime.MessageSender) => {
         if (request.auth) {
             onAuthRequest(sender, request.auth);
         }
         if (request.sessionTimeoutDetector) {
             onSessionTimeoutDetectorRequest(request.sessionTimeoutDetector, sender);
         }
-        return undefined;
+        return;
     });
 }
 
