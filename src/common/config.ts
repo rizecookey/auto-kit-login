@@ -24,7 +24,10 @@ interface PageConfig {
     name: string,
     hostname: string,
     loginUrl: URL,
-    logoutUrl?: URL,
+    logoutUrls?: {
+        baseFilters: string[],
+        isLogout?(details: WebRequest.OnCompletedDetailsType): boolean
+    },
     authenticator: AuthenticatorType,
     loginDetector: LoginDetectorConfig,
     sessionTimeoutDetectors?: string[]
@@ -74,6 +77,12 @@ const config: Config = {
             name: 'ILIAS',
             hostname: 'ilias.studium.kit.edu',
             loginUrl: new URL('https://ilias.studium.kit.edu/shib_login.php?target=root_1'),
+            logoutUrls: {
+                baseFilters: ['https://ilias.studium.kit.edu/ilias.php*cmd=showLogout*'],
+                isLogout(details) {
+                    return new URL(details.url).searchParams.get("cmd") == "showLogout";
+                }
+            },
             authenticator: 'default',
             loginDetector: {
                 type: 'cookie',
@@ -112,7 +121,7 @@ const config: Config = {
             name: 'KIT Campus Plus',
             hostname: 'plus.campus.kit.edu',
             loginUrl: new URL('https://plus.campus.kit.edu/api/user/oidc-login'),
-            logoutUrl: new URL('https://plus.campus.kit.edu/api/user/logout'),
+            logoutUrls: { baseFilters: ['https://plus.campus.kit.edu/api/user/logout'] },
             authenticator: 'default',
             loginDetector: {
                 type: 'api_request',
@@ -128,7 +137,7 @@ const config: Config = {
             name: 'KIT WiWi-Portal',
             hostname: 'portal.wiwi.kit.edu',
             loginUrl: new URL('https://portal.wiwi.kit.edu/api/account/login-oidc'),
-            logoutUrl: new URL('https://portal.wiwi.kit.edu/api/account/logout'),
+            logoutUrls: { baseFilters: ['https://portal.wiwi.kit.edu/api/account/logout'] },
             authenticator: 'default',
             loginDetector: {
                 type: 'api_request',
@@ -196,7 +205,7 @@ function getAutologinRequestFilters(): WebRequest.RequestFilter {
 }
 
 function getLogoutUrlFilters(): WebRequest.RequestFilter {
-    return { urls: Object.values(config.pages).filter(page => page.logoutUrl !== undefined).map(page => page.logoutUrl!!.toString()) };
+    return { urls: Object.values(config.pages).filter(page => page.logoutUrls !== undefined).flatMap(page => page.logoutUrls?.baseFilters!!) };
 }
 
 function findPageDetailsForDomain(domain: string): [string, PageConfig] | [undefined, undefined] {

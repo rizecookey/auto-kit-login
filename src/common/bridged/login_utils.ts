@@ -74,7 +74,8 @@ function bridge(endpoint: BridgeEndpoint) {
         }, { urls: [logoutUrlFilter] });
         browser.webRequest.onCompleted.addListener(async details => {
             const [pageId, pageDetails] = findPageDetailsForDomain(new URL(details.url).hostname);
-            if (pageId === undefined || pageDetails === undefined) {
+            if (pageId === undefined || pageDetails === undefined
+                || pageDetails.logoutUrls?.isLogout != undefined && !pageDetails.logoutUrls.isLogout(details)) {
                 return;
             }
 
