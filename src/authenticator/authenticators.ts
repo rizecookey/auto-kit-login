@@ -34,10 +34,10 @@ class FELSAuthenticator extends DefaultAuthenticator {
         'jakarta.faces.partial.ajax': 'true',
         'jakarta.faces.source': 'searchAutocompl',
         'jakarta.faces.partial.execute': 'searchAutocompl',
-        'jakarta.faces.partial.render': 'form',
-        'jakarta.faces.behavior.event': 'valueChange',
+        'jakarta.faces.partial.render': 'infoPnl',
+        'jakarta.faces.behavior.event': 'change',
         'jakarta.faces.partial.event': 'change',
-        'form': 'form',
+        'form_SUBMIT': '1',
         'searchAutocompl_input': 'Karlsruher+Institut+für+Technologie+(KIT)',
         'searchAutocompl_hinput': '1002'
     };
@@ -47,7 +47,7 @@ class FELSAuthenticator extends DefaultAuthenticator {
         'jakarta.faces.partial.execute': '@all',
         'jakarta.faces.partial.render': 'form',
         'login': 'login',
-        'form': 'form',
+        'form_SUBMIT': '1',
         'searchAutocompl_input': 'Karlsruher+Institut+für+Technologie+(KIT)',
         'searchAutocompl_hinput': '1002'
     }
