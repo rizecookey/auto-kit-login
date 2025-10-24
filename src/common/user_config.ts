@@ -20,7 +20,7 @@ function getDefaultUserConfig(): UserConfig {
     let defaults: UserConfig = {
         enabled: true,
         autoSubmitLoginForm: false,
-        loginWindowType: browser.windows !== undefined ? 'popup' : 'tab',
+        loginWindowType: 'tab',
         autologinPages: {}
     };
 
