@@ -1,5 +1,6 @@
 import { initBridge } from '../common/bridge/initializer'
 import autoLogin from './autologin';
+import cookieLifetimeExtension from './cookie_lifetime_extension';
 import { browserType } from '../common/platform';
 import * as specialTabs from '../common/bridged/special_tabs';
 import loginUtils from '../common/bridged/login_utils';
@@ -12,4 +13,5 @@ registerListeners();
 
 function registerListeners(): void {
     autoLogin.registerListeners();
+    cookieLifetimeExtension.registerListeners();
 }

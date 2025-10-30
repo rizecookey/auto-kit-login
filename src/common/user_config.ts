@@ -4,6 +4,8 @@ import { storage } from './storage';
 
 type UserConfig = {
     enabled: boolean,
+    extendLoginCookieLifetime: boolean,
+    additionalLoginCookieLifetime: number,
     autoSubmitLoginForm: boolean,
     loginWindowType: 'popup' | 'tab';
     autologinPages: { [key: string]: boolean },
@@ -19,6 +21,8 @@ const userConfig = storage<PartialUserConfig>('userConfig', browser.storage.loca
 function getDefaultUserConfig(): UserConfig {
     let defaults: UserConfig = {
         enabled: true,
+        extendLoginCookieLifetime: true,
+        additionalLoginCookieLifetime: 60 * 60 * 24 * 2,
         autoSubmitLoginForm: false,
         loginWindowType: 'tab',
         autologinPages: {}

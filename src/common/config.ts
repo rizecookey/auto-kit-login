@@ -30,7 +30,8 @@ interface PageConfig {
     },
     authenticator: AuthenticatorType,
     loginDetector: LoginDetectorConfig,
-    sessionTimeoutDetectors?: string[]
+    sessionTimeoutDetectors?: string[],
+    expirationExtendableCookies?: RegExp[]
 }
 
 type AuthenticatorType = 'default' | 'fels';
@@ -90,7 +91,8 @@ const config: Config = {
                     cookie: /_shibsession.*/
                 }
             },
-            sessionTimeoutDetectors: ['ilias']
+            sessionTimeoutDetectors: ['ilias'],
+            expirationExtendableCookies: [/_shibsession.*/, /PHPSESSID/]
         },
         campus: {
             name: 'KIT Campus',
@@ -103,7 +105,8 @@ const config: Config = {
                     cookie: /_shibsession.*/
                 }
             },
-            sessionTimeoutDetectors: ['campus']
+            sessionTimeoutDetectors: ['campus'],
+            expirationExtendableCookies: [/_shibsession.*/]
         },
         'my-scc': {
             name: 'My SCC',
@@ -116,6 +119,7 @@ const config: Config = {
                     cookie: /_shibsession.*/
                 }
             },
+            expirationExtendableCookies: [/_shibsession.*/]
         },
         'campus-plus': {
             name: 'KIT Campus Plus',
