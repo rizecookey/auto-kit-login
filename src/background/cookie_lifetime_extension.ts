@@ -22,7 +22,13 @@ function doNotIgnoreEvent(id: CookieId): void {
     cookieEventIgnore = cookieEventIgnore.filter(obj => obj.name != id.name || obj.domain != id.domain || obj.path != id.path);
 }
 
-async function extendCookieLifetime(originalCookie: Cookies.Cookie) {
+async function extendCookieLifetime(originalCookie: Cookies.Cookie): Promise<void> {
+    const cookieId: CookieId = { name: originalCookie.name, domain: originalCookie.domain, path: originalCookie.path };
+    if (shouldIgnoreEvent(cookieId)) {
+        doNotIgnoreEvent(cookieId);
+        return;
+    }
+
     const userConfig = await userConfigManager.get();
     if (!userConfig.extendLoginCookieLifetime) {
         return;
@@ -43,10 +49,12 @@ async function extendCookieLifetime(originalCookie: Cookies.Cookie) {
         url: `https://${originalCookie.domain}${originalCookie.path}`,
         value: originalCookie.value
     };
+
     if (!originalCookie.hostOnly) {
         cookieSetDetails.domain = originalCookie.domain;
     }
 
+    ignoreNextEvent(cookieId);
     await browser.cookies.set(cookieSetDetails);
 }
 
@@ -58,13 +66,6 @@ function registerListeners() {
             return;
         }
 
-        const cookieId: CookieId = {name: details.cookie.name, domain: details.cookie.domain, path: details.cookie.path};
-        if (shouldIgnoreEvent(cookieId)) {
-            doNotIgnoreEvent(cookieId);
-            return;
-        }
-        
-        ignoreNextEvent(cookieId);
         extendCookieLifetime(details.cookie);
     });
 }
