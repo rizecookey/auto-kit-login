@@ -13,6 +13,7 @@ async function loadConfigOptions(): Promise<void> {
     let userConfig = await userConfigManager.get();
 
     setupToggle('enable_autologin', userConfig.enabled, val => userConfigManager.set({ enabled: val }));
+    setupToggle('enable_session_cookie_extension', userConfig.extendLoginCookieLifetime, val => userConfigManager.set({ extendLoginCookieLifetime: val }))
     setupToggle('enable_auto_submit', userConfig.autoSubmitLoginForm, val => userConfigManager.set({ autoSubmitLoginForm: val }));
     setupDropdown('login_window_type', config.extension.userConfig.loginWindowTypes, userConfig.loginWindowType, val => userConfigManager.set({ loginWindowType: val }))
 
