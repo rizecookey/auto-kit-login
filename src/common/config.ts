@@ -1,7 +1,11 @@
-import browser, { Events, WebNavigation, WebRequest } from 'webextension-polyfill'
+import browser, { Cookies, Events, WebNavigation, WebRequest } from 'webextension-polyfill'
 
 interface Config {
     pages: {[key: string]: PageConfig},
+    expirationExtendableCookies: {
+        domains: string[],
+        names: RegExp[]
+    }[],
     idpUrl: string,
     filters: {
         login: string,
@@ -30,8 +34,7 @@ interface PageConfig {
     },
     authenticator: AuthenticatorType,
     loginDetector: LoginDetectorConfig,
-    sessionTimeoutDetectors?: string[],
-    expirationExtendableCookies?: RegExp[]
+    sessionTimeoutDetectors?: string[]
 }
 
 type AuthenticatorType = 'default' | 'fels';
@@ -91,8 +94,7 @@ const config: Config = {
                     cookie: /_shibsession.*/
                 }
             },
-            sessionTimeoutDetectors: ['ilias'],
-            expirationExtendableCookies: [/_shibsession.*/, /PHPSESSID/]
+            sessionTimeoutDetectors: ['ilias']
         },
         campus: {
             name: 'KIT Campus',
@@ -105,8 +107,7 @@ const config: Config = {
                     cookie: /_shibsession.*/
                 }
             },
-            sessionTimeoutDetectors: ['campus'],
-            expirationExtendableCookies: [/_shibsession.*/]
+            sessionTimeoutDetectors: ['campus']
         },
         'my-scc': {
             name: 'My SCC',
@@ -118,8 +119,7 @@ const config: Config = {
                 options: {
                     cookie: /_shibsession.*/
                 }
-            },
-            expirationExtendableCookies: [/_shibsession.*/]
+            }
         },
         'campus-plus': {
             name: 'KIT Campus Plus',
@@ -167,6 +167,16 @@ const config: Config = {
             }
         }
     },
+    expirationExtendableCookies: [
+        {
+            domains: ['campus.studium.kit.edu', 'ilias.studium.kit.edu', 'my.scc.kit.edu'],
+            names: [/_shibsession.*/, /PHPSESSID/]
+        },
+        {
+            domains: ['idp.scc.kit.edu'],
+            names: [/__Host-shib_idp_session/]
+        }
+    ],
     idpUrl: 'https://idp.scc.kit.edu/idp',
     filters: {
         login: 'https://idp.scc.kit.edu/idp/profile/SAML2/Redirect/SSO**',
@@ -225,4 +235,18 @@ function findPageDetailsForDomain(domain: string): [string, PageConfig] | [undef
     return found;
 }
 
-export { config, getAutologinPageFilters, getAutologinRequestFilters, getLogoutUrlFilters, findPageDetailsForDomain, AuthenticatorType, LoginDetectorConfig, CookieLoginDetectorConfig, ApiRequestLoginDetectorConfig, IsRedirectedLoginDetectorConfig, PageConfig, Config, LoginWindowType }
+function isExpirationExtendableCookie(cookie: Cookies.Cookie): boolean {
+    for (let cookieType of config.expirationExtendableCookies) {
+        if (cookieType.domains.every(domain => cookie.domain !== domain)) {
+            continue;
+        }
+
+        if (cookieType.names.some(regex => regex.test(cookie.name))) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+export { config, getAutologinPageFilters, getAutologinRequestFilters, getLogoutUrlFilters, findPageDetailsForDomain, isExpirationExtendableCookie, AuthenticatorType, LoginDetectorConfig, CookieLoginDetectorConfig, ApiRequestLoginDetectorConfig, IsRedirectedLoginDetectorConfig, PageConfig, Config, LoginWindowType }

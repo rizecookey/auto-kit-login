@@ -1,5 +1,5 @@
 import browser, { Cookies } from "webextension-polyfill";
-import { findPageDetailsForDomain } from "../common/config";
+import { isExpirationExtendableCookie } from "../common/config";
 import userConfigManager from "../common/user_config";
 
 type CookieId = {
@@ -60,9 +60,7 @@ async function extendCookieLifetime(originalCookie: Cookies.Cookie): Promise<voi
 
 function registerListeners() {
     browser.cookies.onChanged.addListener(details => {
-        let [_, pageConfig] = findPageDetailsForDomain(details.cookie.domain);
-        if (details.removed || pageConfig?.expirationExtendableCookies == undefined
-            || !pageConfig.expirationExtendableCookies.some(cookieRegex => cookieRegex.test(details.cookie.name))) {
+        if (details.removed || !isExpirationExtendableCookie(details.cookie)) {
             return;
         }
 
