@@ -18,11 +18,14 @@ const FINAL_FILES = [
     "authenticator/authenticating.css",
     "authenticator/authentication.ts",
     "background/background.ts",
-    "content/**/[!helper.ts]*",
+    "content/**/*",
     "common_style.scss",
     "popup/popup.*",
     "manifest.json",
     "kit_cookie.png"
+];
+const IGNORED_FILES = [
+    "content/**/helper.ts"
 ];
 
 const PACKAGE_JSON = JSON.parse(fs.readFileSync('./package.json'));
@@ -103,7 +106,7 @@ function expandManifest(manifestFile, expansions) {
 async function bundle(srcDir, finalFiles, outDir) {
     logBuildStep('bundling', `${srcDir}`);
     await esbuild.build({
-        entryPoints: globSync(finalFiles, { cwd: srcDir, nodir: true }).map(file => path.join(srcDir, file)),
+        entryPoints: globSync(finalFiles, { cwd: srcDir, nodir: true, ignore: IGNORED_FILES}).map(file => path.join(srcDir, file)),
         minify: mode == 'release' ? true : false,
         bundle: true,
         platform: 'browser',
