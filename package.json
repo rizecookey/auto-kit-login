@@ -34,7 +34,7 @@
     "fs-extra": "^11.4.0",
     "glob": "^13.0.6",
     "postcss-loader": "^8.2.1",
-    "sass": "^1.101.7",
+    "sass": "^1.102.0",
     "sass-loader": "^16.0.8",
     "style-loader": "^4.0.0",
     "typescript": "^5.9.3",
@@ -45,5 +45,17 @@
     "@popperjs/core": "^2.11.8",
     "auto-kit-login": "file:",
     "bootstrap": "^5.3.8"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "esbuild@0.28.1": true
+  },
+  "overrides": {
+    "web-ext": {
+      "adm-zip": "^0.6.0",
+      "shell-quote": "^1.10.0",
+      "eslint": "^10.8.0",
+      "brace-expansion": "5.0.8"
+    }
   }
 }
